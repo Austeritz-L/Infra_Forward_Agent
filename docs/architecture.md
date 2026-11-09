@@ -9,6 +9,9 @@ v0.4 的独立 `performance/` 可分析规范化native/capture/ceiling证据，�
 v0.5 的独立 `deployment/` 对同物理资源的列举候选做Cache预算与证据选型；不执行部署。
 它是独立跨拓扑契约，旧replay严格环境门禁保持生效。
 
+v0.6 的独立 `kernel/` 用前三模块的固定证据形成任务，输出可审查计划并离线验收三层收益。
+可选CPU关联range默认关闭，不等同于GPU profiler；不自动运行KDA、编译器或GPU。
+
 ## 优化单位
 
 一个 campaign 固定模型、权重、镜像、输入分布、forward 边界和验收条件。

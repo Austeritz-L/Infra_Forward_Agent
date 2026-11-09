@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "focus": "prefill",
+  "status": "offline_analysis_handoff_and_imported_acceptance",
+  "mandatory_analysis": [
+    "all-rank timeline and request/step/launch/source mapping",
+    "actual shape/layout/quantization/routing, not client C times L",
+    "native timing plus matched physical/sustained/reference resource limits",
+    "counter or validated instrumentation proxy for work/traffic/occupancy/stall/spill",
+    "quantitative predeclared hypothesis, alternative explanation and falsification",
+    "separate post-change profile and observed hypothesis test"
+  ],
+  "workflow": [
+    "freeze parent, active test matrix and eligible deployment",
+    "instrument, profile, calibrate, diagnose",
+    "export KDA-style draft and reviewable plan",
+    "implement one isolated hypothesis with parent/patch/binary hashes",
+    "precision before",
+    "native operator wrapper, coordinated prefill, full service cohort",
+    "precision after",
+    "reprofile and test the hypothesis",
+    "preserve KV capacity, gate every condition, record reject/accept",
+    "re-analyze next hotspot; create a fresh task before another iteration"
+  ],
+  "defaults": {
+    "paired_independent_rounds": 5,
+    "max_round_cv": 0.05,
+    "max_regression": 0.02,
+    "operator_min_gain": 0.05,
+    "forward_min_gain": 0.03,
+    "service_min_gain": 0.03,
+    "tail_samples_per_round": 200,
+    "gain_conditions": "predeclare; other active conditions must not regress",
+    "precision_tolerances": "per operator/model/reference; never relaxed after a failure"
+  },
+  "architecture_recipes": "architectures.json",
+  "operator_families": {
+    "gemm_grouped_gemm": [
+      "per-expert M/N/K histograms, empty/skewed experts and padding",
+      "instruction operands/accumulation, tile and stage sweep",
+      "matrix/issue utilization vs HBM/L2 traffic, spills, waves and tail"
+    ],
+    "attention": [
+      "separate q/chunk/KV/context lengths and actual prefix state",
+      "mask/softmax/LSE and accumulation accuracy",
+      "KV/index/compression/window semantics, storage layout and traffic"
+    ],
+    "normalization_reduction": [
+      "numerical cancellation and reduction order",
+      "vectorization, memory coalescing, launch count and cross-stream dependency"
+    ],
+    "router_pack_quantize": [
+      "top-k tie semantics, scale/rounding/clamping and alignment",
+      "actual bytes, temporary buffers and wrapper overhead"
+    ],
+    "dispatch_combine_collectives": [
+      "global/per-rank tokens, routing distribution, wire bytes and rank arrivals",
+      "source-correlated producer/consumer and buffer publication/ack lifecycle",
+      "profiler replay compatibility; never serialize or strand peer ranks"
+    ],
+    "fusion_overlap": [
+      "ownership/dependency/lifetime proof before overlap changes",
+      "joint register/shared/TMEM/HBM contention and extra workspace",
+      "one full operator wrapper, then full prefill and service requalification"
+    ]
+  },
+  "precision_modes": [
+    "default and non-default stream",
+    "repeated state reuse and reset",
+    "graph path when enabled",
+    "zero/odd/tail/alignment-boundary shapes",
+    "skewed/empty experts and duplicate destinations",
+    "dtype/quantization extremes and long context",
+    "full-rank pre/post timing and first-token parity"
+  ],
+  "kda": {
+    "revision": "acdd79343c5e9d0c7cb96289f26fd3f1051ce785",
+    "source": "https://github.com/NVlabs/kda/blob/acdd79343c5e9d0c7cb96289f26fd3f1051ce785/docs/agent-flow.md",
+    "reuse": "task contract, draft/plan, isolated workspace, candidate lineage and evidence promotion",
+    "auto_invoke": false
+  },
+  "limits": [
+    "No automatic GPU execution, compilation, profiler invocation or code generation",
+    "Evidence files are external attestations; hashes bind artifacts, not their truth",
+    "Counters unavailable means validated proxy or analysis_required, never filled zero",
+    "Kernel-only gains never promote the forward/service baseline",
+    "Target model context, full-occupancy SLO and KV residency must be requalified when affected"
+  ]
+}

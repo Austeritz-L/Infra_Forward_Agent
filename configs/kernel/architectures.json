@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-11-09",
+  "status": "source_guidance_not_live_hardware_qualification",
+  "moore-s5000": {
+    "candidate_paths": [
+      "MP31 SQMMA, including source-defined TF32 and F16S4/BF16S4 variants",
+      "TME global/shared tensor movement, descriptors and barriers",
+      "MUTLASS/MUSA native, or independently qualified TileLang/MUSA lowering"
+    ],
+    "must_verify": [
+      "actual S5000/MP31 identity, mcc flags and operand pair",
+      "generated instruction/IR and accumulation/scaling path",
+      "register allocation/spills, shared limits, launch occupancy and barrier lifecycle"
+    ],
+    "tools": [
+      "Moore Perf System timeline",
+      "Moore Perf Compute mcu counters",
+      "MUSA Compute Sanitizer when supported",
+      "version-qualified compiler/resource/disassembly exports"
+    ],
+    "resource_limits": null,
+    "sources": [
+      "https://github.com/MooreThreads/mutlass/blob/main/include/mute/arch/mma_mp31_sqmma.hpp",
+      "https://github.com/MooreThreads/mutlass/blob/main/include/mute/arch/copy_mp31_tme.hpp",
+      "https://docs.mthreads.com/mooreperf/mooreperf-doc-online/moore_perf_compute/user_guide/"
+    ]
+  },
+  "nvidia-sm90": {
+    "candidate_paths": [
+      "mma.sync or legal sm_90a WGMMA operand variants",
+      "TMA/mbarrier and warp-specialized producer/consumer pipelines",
+      "CUTLASS/CuTe or independently qualified CUDA/Triton/TileLang"
+    ],
+    "must_verify": [
+      "exact SKU, target/compiler, operand pair and emitted SASS",
+      "accumulator register pressure, shared staging and spills",
+      "cluster occupancy, async completion and descriptor lifecycle"
+    ],
+    "tools": [
+      "Nsight Systems/NVTX timeline",
+      "Nsight Compute counters and source/SASS correlation",
+      "Compute Sanitizer in a separate correctness pass",
+      "ptxas resource output and runtime occupancy APIs"
+    ],
+    "resource_limits": null,
+    "sources": [
+      "https://docs.nvidia.com/cuda/hopper-tuning-guide/index.html",
+      "https://docs.nvidia.com/cuda/parallel-thread-execution/index.html",
+      "https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html"
+    ]
+  },
+  "nvidia-sm103": {
+    "candidate_paths": [
+      "legal sm_103a tcgen05 floating-point variants and TMEM accumulation",
+      "TMA/barriers, CTA-group and TMEM allocation/load/epilogue ownership",
+      "CUTLASS/CuTe or independently qualified CUDA/Triton/TileLang lowering"
+    ],
+    "must_verify": [
+      "exact SKU and compiler target; SM100 does not certify SM103",
+      "operand/kind/layout/block scale, TMEM and group legality",
+      "register/shared/TMEM joint occupancy and allocation granularity"
+    ],
+    "tools": [
+      "version-qualified Nsight Systems/NVTX",
+      "version-qualified Nsight Compute/SASS exports",
+      "Compute Sanitizer in separate correctness passes",
+      "compiler resources plus runtime occupancy/device attributes"
+    ],
+    "resource_limits": null,
+    "warnings": [
+      "Do not inherit SM100 tcgen05 integer support: the checked cuBLASDx 0.8.0 guide excludes integer tcgen05 on SM1030",
+      "Blackwell tuning-guide CC10.0 numbers are not a live SM103 resource record"
+    ],
+    "sources": [
+      "https://docs.nvidia.com/cuda/cublasdx/0.8.0/performance_guide_api_blackwell.html",
+      "https://docs.nvidia.com/cuda/parallel-thread-execution/index.html",
+      "https://docs.nvidia.com/cuda/blackwell-tuning-guide/index.html"
+    ]
+  }
+}

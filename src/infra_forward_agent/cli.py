@@ -15,6 +15,8 @@ from .deployment.demo import make_deployment_demo
 from .deployment.report import write_deployment_report
 from .engine import replay
 from .evaluation import compare
+from .kernel.demo import make_kernel_demo
+from .kernel.workflow import write_kernel_evaluation, write_kernel_task
 from .performance.demo import make_performance_demo
 from .performance.report import write_report
 from .trace import load_chrome
@@ -53,6 +55,25 @@ def main(argv: list[str] | None = None) -> int:
         "deployment-demo", help="Synthetic 2Mi-token topology selection; no GPU"
     )
     dep_demo.add_argument("--output", type=Path, required=True)
+    kernel_task = sub.add_parser(
+        "kernel-task", help="Export an analysis-gated KDA-style task packet"
+    )
+    kernel_task.add_argument("task", type=Path)
+    kernel_task.add_argument("--output", type=Path, required=True)
+    kernel_eval = sub.add_parser(
+        "kernel-evaluate", help="Gate operator, prefill and service evidence"
+    )
+    kernel_eval.add_argument("bundle", type=Path)
+    kernel_eval.add_argument("--output", type=Path, required=True)
+    kernel_demo = sub.add_parser(
+        "kernel-demo", help="Synthetic kernel investigation; no GPU or KDA run"
+    )
+    kernel_demo.add_argument(
+        "--architecture",
+        default="nvidia-sm90",
+        choices=["moore-s5000", "nvidia-sm90", "nvidia-sm103"],
+    )
+    kernel_demo.add_argument("--output", type=Path, required=True)
     demo = sub.add_parser("demo", help="Replay synthetic evidence; requires no GPU or model API")
     demo.add_argument("--output", type=Path, required=True)
     fixtures = sub.add_parser("fixtures", help="Write editable synthetic input evidence")
@@ -92,6 +113,14 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "deployment-demo":
             with tempfile.TemporaryDirectory(prefix="ifa-deployment-") as directory:
                 write_deployment_report(make_deployment_demo(Path(directory)), args.output, emit)
+        elif args.command == "kernel-task":
+            write_kernel_task(args.task, args.output, emit)
+        elif args.command == "kernel-evaluate":
+            write_kernel_evaluation(args.bundle, args.output, emit)
+        elif args.command == "kernel-demo":
+            with tempfile.TemporaryDirectory(prefix="ifa-kernel-") as directory:
+                _, bundle = make_kernel_demo(Path(directory), args.architecture)
+                write_kernel_evaluation(bundle, args.output, emit)
         elif args.command == "demo":
             with tempfile.TemporaryDirectory(prefix="ifa-demo-") as directory:
                 replay(make_demo(Path(directory)), args.output, emit)

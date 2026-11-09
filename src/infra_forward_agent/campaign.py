@@ -83,6 +83,11 @@ def build_plan(config_path: Path) -> dict:
         deployment_contract = read_json(config_path.parent / data["deployment_contract"])
         if deployment_contract.get("schema_version") != 1:
             raise ValueError("Deployment contract must define schema_version=1")
+    kernel_contract = {}
+    if data.get("kernel_contract"):
+        kernel_contract = read_json(config_path.parent / data["kernel_contract"])
+        if kernel_contract.get("schema_version") != 1 or kernel_contract.get("focus") != "prefill":
+            raise ValueError("Kernel contract must define schema_version=1, focus=prefill")
     deployment = data.get("deployment", {})
     if not isinstance(deployment, dict):
         raise ValueError("deployment must be an object")
@@ -120,6 +125,7 @@ def build_plan(config_path: Path) -> dict:
             testing_contract=testing_contract,
             performance_contract=performance_contract,
             deployment_contract=deployment_contract,
+            kernel_contract=kernel_contract,
         )
         stages.append(
             StagePlan(
@@ -158,6 +164,7 @@ def build_plan(config_path: Path) -> dict:
         "testing_contract": testing_contract,
         "performance_contract": performance_contract,
         "deployment_contract": deployment_contract,
+        "kernel_contract": kernel_contract,
         "scenario_count_per_architecture": len(scenarios),
         "scenario_count_total": len(scenarios) * len(profiles),
         "scenarios": scenarios,
@@ -185,6 +192,7 @@ def write_plan(config_path: Path, output: Path, sink=None) -> dict:
         write_json(output / "testing.contract.json", plan["testing_contract"])
         write_json(output / "performance.contract.json", plan["performance_contract"])
         write_json(output / "deployment.contract.json", plan["deployment_contract"])
+        write_json(output / "kernel.contract.json", plan["kernel_contract"])
         lines = [
             "# Multi-architecture campaign plan",
             "",

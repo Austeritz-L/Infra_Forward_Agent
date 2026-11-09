@@ -17,3 +17,9 @@ v0.5长上下文选型来源与支持边界记录在[部署规范](domains/deplo
 [模型长度观察](../configs/deployment/context-evidence.json)。参考vLLM版本化CP部署、
 特定后端PCP/DCP布局与SGLang HiCache的分层语义；不复制实现，不将某后端支持泛化到S5000/NV。
 模型长度资料不是本仓库的runtime、质量或显存验收。
+
+
+v0.6算子来源与适用范围见[第四模块](domains/kernel.md)及
+[架构调查配置](../configs/kernel/architectures.json)。KDA按acdd793固定流程版本借鉴任务/证据设计；
+MUTLASS、NVIDIA PTX/CUDA及各厂商profiler文档只作为能力调查来源，逐工具链核实实际产物。
+SM103不继承未经核实的SM100 integer tcgen05或资源表，CPU合成数据不能认证任何后端。

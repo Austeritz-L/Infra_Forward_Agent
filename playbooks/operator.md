@@ -11,3 +11,11 @@
 
 出口：局部正确 + 整段 forward 验收通过；或者拒绝原因与原始证据。
 编译成功、launch 变少、算子 microbenchmark 更快均不单独构成 forward 收益。
+
+
+v0.6执行规范见[第四模块](../docs/domains/kernel.md)。先用ifa kernel-task导出分析任务，再由外部
+执行器形成候选与原始报告，ifa kernel-evaluate做确定性验收；命令均不自动执行GPU或调用KDA。
+所有优化必须插桩/源码关联、all-rank timeline、counter或已验证proxy、匹配上限和定量反证计划。
+未知metric不填0；profile/replay、细粒度插桩和native timing分离；原假设不支持则回到分析。
+精度覆盖默认/非默认Stream、graph（启用时）、重复state、边界shape与路由偏斜，再计时、再精度。
+算子快但forward或服务退化即拒绝；额外workspace不得吃掉原已验证的长上下文KV slots。

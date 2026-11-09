@@ -11,6 +11,8 @@ class KernelAgent:
             scope="operator/communication/fusion/stream scheduling",
             required_inputs=[
                 "hotspot and math/layout/quantization contract",
+                "all-rank instrumentation and source-correlated counters or validated proxies",
+                "matched resource limit model and falsifiable quantitative hypothesis",
                 "shape/routing matrix",
                 "verified ISA/compiler capabilities and resource limits",
                 "stream/collective dependency and buffer lifetime",
@@ -19,11 +21,16 @@ class KernelAgent:
                 "isolated candidate patch and parent revision",
                 "operator correctness and counter evidence",
                 "whole-forward requalification request",
+                "full declared service matrix acceptance and preserved resident KV capacity",
             ],
             options={
                 "architecture_profile": context.architecture.to_dict(),
                 "knowledge_references": context.knowledge,
                 "cross_architecture_transfer_requires_revalidation": True,
-                "optimizer_bridge": "planned",
+                "contract": context.kernel_contract,
+                "deep_analysis_required": True,
+                "optimizer_bridge": "offline KDA-style task export; no automatic KDA invocation",
+                "task_export": "ifa kernel-task <contract.json> --output <new-directory>",
+                "evidence_gate": "ifa kernel-evaluate <bundle.json> --output <new-directory>",
             },
         )

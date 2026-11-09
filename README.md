@@ -20,7 +20,7 @@ Infra Forward Agent 希望把 Infra 工程师的优化工作组织成一个持�
 大规模 trace 的 SQL 分析后端计划参考 [Perfetto](https://perfetto.dev/docs/analysis/getting-started)。
 参考关系、版本与实现边界见 [references](docs/references.md)。
 
-## v0.5：长上下文容量与分布式部署选型
+## v0.6：深度分析驱动的热点算子优化
 
 新增 `ifa plan`：展开测试矩阵，为每个架构生成 preflight 和五模块任务，
 记录依赖、所需证据、用户经验引用及预期输出。它只做规划，不执行 GPU 作业或调用模型。
@@ -50,8 +50,10 @@ Infra Forward Agent 希望把 Infra 工程师的优化工作组织成一个持�
 | 导入式服务/forward统计、算子work/union/exclusive、通信与多Stream时间线 | 已实现；无自动采集或因果关键路径 |
 | 理论/实测持续/同shape参考上限，资源时间模型与攻坚队列 | 已实现；需输入同环境的已核实上限，未内置任何真实硬件速率 |
 | TP/EP/PP/DP/CP逐rank预算、长上下文容量、三目标/Pareto选型 | 离线导入已实现；需外部质量/峰值/接纳/服务证据，不执行部署 |
+| 深度分析门禁、KDA风格任务导出、算子→prefill→服务验收 | 离线导入已实现；带固定来源/SHA256、定量假设检验与KV预算复验 |
+| 默认关闭的CPU关联插桩接口 | 已实现；厂商range回调需注入，不测GPU耗时 |
 | 自动抓取 Nsys / NCU / MCU、SSH / 容器执行 | 待实现；已有适配协议 |
-| LLM 规划、代码生成、KDA 执行桥接 | 待实现；已有任务模板与交接契约 |
+| LLM 规划、代码生成、自动运行KDA | 待实现；已实现离线任务导出及证据返回验收 |
 | 因果关键路径、完整跨 rank DAG、KV 容量实测 | 待实现 |
 
 **演示中的 trace 和性能数值全部为合成输入，不代表 NV、S5000 或模型的实测收益。**
@@ -71,6 +73,7 @@ ifa plan configs/campaigns/multi-architecture.json --output runs/campaign-plan-0
 ifa performance-demo --output runs/performance-demo-001
 ifa plan configs/campaigns/long-context-capacity.json --output runs/long-context-plan-001
 ifa deployment-demo --output runs/deployment-demo-001
+ifa kernel-demo --architecture nvidia-sm90 --output runs/kernel-demo-001
 ifa demo --output runs/demo-001
 python -m unittest discover -s tests -v
 ruff check .
@@ -79,7 +82,7 @@ ruff check .
 默认 suite 仅研究 prefill，统一输出 1 token，排除 decode/TPOT 验收。
 smoke+core 共 44 组服务工作负载，各自关联 forward/operator，合计 132 条规划记录/架构、
 三个架构共 396 条，生成 18 个阶段任务（含 preflight）。
-规划输出包含 campaign.plan.json、scenario.matrix.json、testing.contract.json、performance.contract.json、deployment.contract.json、events.jsonl 和 plan.md。
+规划输出包含 campaign.plan.json、scenario.matrix.json、testing.contract.json、performance.contract.json、deployment.contract.json、kernel.contract.json、events.jsonl 和 plan.md。
 `execution_ready=false` 与 `needs_adapter` 表示真实 runner 尚未接入；未提供 trace pair 时跳过对比。
 
 完整 [测试矩阵与验收规范](docs/domains/testing.md) 包含冷算、Locust 固定工作量、20 分钟稳态、
@@ -100,6 +103,12 @@ performance.analysis.json、attack-plan.json、report.md、流式事件与原始
 攻坚队列区分先补测量、算子效率差距、减少工作/流量、等待与overlap，并保留完全重叠热点。
 理论资源界不等于服务可达吞吐，接近经验参考也不等于确认瓶颈；缺少计数器/参考时保留unknown。
 性能演示全部合成，可从其input/performance.json查看schema；没有执行GPU测试或测定S5000/SM90/SM103上限。
+
+[算子优化规范](docs/domains/kernel.md)要求每个优化先有插桩/源代码关联、完整时间线、counter或已验证proxy、
+匹配资源上限与定量反证计划。`ifa kernel-task`导出KDA风格任务；缺证据时只允许补分析。
+`ifa kernel-evaluate`分别验收完整wrapper、prefill forward与服务，检查前后精度、独立配对轮次、
+首token reference、binary/patch身份、修改后假设结果与原KV容量预算。没有自动编译、调用KDA或执行GPU。
+S5000/SM90/SM103各自保留ISA、同步与资源调查路径，不共享未经验证的指令支持或硬件限额。
 
 演示包含两个 rank、C1/C16 两个条件和三轮候选：算子候选通过后通信成为新热点，
 overlap 候选继续通过，最后一个候选因精度失败被拒绝。所有轮次均保留。
@@ -141,6 +150,7 @@ src/infra_forward_agent/
   testing/                  # prefill suite v2 校验与同源三层测试规范
   performance/              # 统计、时间线、三层资源上限、证据与攻坚报告
   deployment/               # 物理Cache池/显存预算、通信参考、三目标离线证据选型
+  kernel/                   # 深度分析门禁、关联插桩、KDA任务导出与三层证据验收
   agents/                   # testing/performance/deployment/kernel/traces 五个逻辑职责
   architectures/            # 可扩展注册表 + S5000/SM90/SM103 档案
   contracts.py              # 证据、策略、决策契约
@@ -155,6 +165,7 @@ configs/campaigns/          # 架构列表、容量/性能目标、经验与 tra
 configs/scenarios/          # 用户可编辑的场景 suite
 configs/performance/        # 各计算类型的校准、采集与瓶颈定位契约
 configs/deployment/         # 长上下文选型契约、模型长度来源观察
+configs/kernel/             # 优化流程、架构调查来源、精度与复验策略
 configs/backends/           # 厂商后端集成声明；不代表已完成接入
 docs/                      # 架构、证据、路线图、研究来源
 playbooks/                 # 四个优化方向的调查与验证方法

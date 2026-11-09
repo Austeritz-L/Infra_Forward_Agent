@@ -377,6 +377,7 @@ def select_deployment(path: Path) -> dict:
         row["eligible"] = not reasons
         if row["eligible"]:
             row["verified_context_slots"] = row["reported_context_slots"]
+            row["qualified_replica_slots"] = dict(memory["replica_slots"])
             row["throughput_score"] = _geometric(
                 [(c["throughput_ratio"], c["weight"]) for c in row["conditions"]]
             )

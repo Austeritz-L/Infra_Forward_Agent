@@ -8,6 +8,8 @@ v0.4 的第二领域细化为 [上限驱动的性能分析](domains/performance.
 
 v0.5 的第三领域提供[长上下文分布式选型](domains/deployment.md)：离线预算与三目标证据排名，不部署。
 
+v0.6 的第四领域提供[深度分析驱动的算子流程](domains/kernel.md)：KDA风格离线导出、插桩接口与三层证据门禁。
+
 ## 总控与共享上下文
 
 ```mermaid
@@ -37,7 +39,7 @@ flowchart TD
 | 规范测试条目、服务多场景 | agents/testing.py + scenarios.py | suite、模型/镜像身份、reference、cache 准备 | 展开后的场景矩阵、覆盖与跳过原因、正确性/原始样本 | 矩阵展开与任务规划已实现；runner 待接入 |
 | prefill forward、算子占比和性能 | agents/performance.py + performance/ | native样本、trace、counter/资源上限引用 | 三层统计、时间口径、资源模型、攻坚与缺证据 | 导入式分析已实现；自动采集/因果归因待接入 |
 | 分布式 Cache 容量或性能 | agents/deployment.py + deployment/ | 固定物理资源、拓扑、全 rank 显存与实测候选 | 可行性、容量/性能取舍表与 Pareto 候选 | 逐rank/副本预算与三目标离线选型已实现；真实测量/执行器待接入 |
-| 不同架构上的算子优化 | agents/kernel.py | 数学/数值契约、shape/路由、已核实 ISA 和资源 | 隔离 patch、算子证据、forward 复验请求 | 架构上下文与任务规划已实现；优化器待接入 |
+| 不同架构上的算子优化 | agents/kernel.py + kernel/ | 数学/数值契约、shape/路由、已核实 ISA 和资源 | 隔离 patch、算子证据、forward 复验请求 | 深度分析门禁/任务导出/三层验收已实现；真实编译/执行/优化器待接入 |
 | trace 对比与分析（如有） | agents/traces.py | 同架构、同场景/阶段的 before/after pair | forward/算子/通信/overlap 差异、瓶颈迁移 | pair 校验和可选阶段已实现；对比算法待接入 |
 
 通信融合和多 Stream overlap 横跨 Performance、Deployment、Kernel、Trace 四个模块。
@@ -69,6 +71,7 @@ SM90 和 SM103 共享 CUDA 这个 runtime 身份，不共享未经核实的 kern
 - `agents/*.py`、`adapters/protocols.py`：后续逐模块接入策略与运行能力的位置。
 - `configs/deployment/long-context.json`：长上下文预算/比较契约；独立bundle交给ifa deployment。
 - `scenario_tiers`：campaign可覆盖suite启用档，long_context显式选择256Ki至2Mi规划。
+- `configs/kernel/prefill.json`与architectures.json：深度分析、各架构调查、KDA风格任务与收益门禁。
 - `configs/performance/prefill.json`：资源上限分层、各计算类型校准、采集pass、统计和攻坚流程。
 
 所有路径相对 campaign JSON 所在目录解析。`max_scenarios` 当前实际限制矩阵展开规模；

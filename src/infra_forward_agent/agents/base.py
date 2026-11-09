@@ -16,6 +16,7 @@ class PlanningContext:
     testing_contract: dict = field(default_factory=dict)
     performance_contract: dict = field(default_factory=dict)
     deployment_contract: dict = field(default_factory=dict)
+    kernel_contract: dict = field(default_factory=dict)
 
     def task_id(self, stage: str) -> str:
         return f"{self.architecture.id}:{stage}"

@@ -27,3 +27,6 @@ jobs:
       - run: ifa performance-demo --output runs/ci-performance
       - run: ifa deployment-demo --output runs/ci-deployment
       - run: ifa plan configs/campaigns/long-context-capacity.json --output runs/ci-long-context
+      - run: ifa kernel-demo --architecture moore-s5000 --output runs/ci-kernel-s5000
+      - run: ifa kernel-demo --architecture nvidia-sm90 --output runs/ci-kernel-sm90
+      - run: ifa kernel-demo --architecture nvidia-sm103 --output runs/ci-kernel-sm103
