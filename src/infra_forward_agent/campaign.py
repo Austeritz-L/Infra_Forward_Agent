@@ -88,6 +88,11 @@ def build_plan(config_path: Path) -> dict:
         kernel_contract = read_json(config_path.parent / data["kernel_contract"])
         if kernel_contract.get("schema_version") != 1 or kernel_contract.get("focus") != "prefill":
             raise ValueError("Kernel contract must define schema_version=1, focus=prefill")
+    trace_contract = {}
+    if data.get("trace_contract"):
+        trace_contract = read_json(config_path.parent / data["trace_contract"])
+        if trace_contract.get("schema_version") != 1 or trace_contract.get("focus") != "prefill":
+            raise ValueError("Trace contract must define schema_version=1, focus=prefill")
     deployment = data.get("deployment", {})
     if not isinstance(deployment, dict):
         raise ValueError("deployment must be an object")
@@ -99,6 +104,9 @@ def build_plan(config_path: Path) -> dict:
     if not isinstance(traces, dict) or type(traces.get("enabled", True)) is not bool:
         raise ValueError("trace_comparison must be an object with boolean enabled")
     pairs = traces.get("pairs", {})
+    bundles = traces.get("bundles", {})
+    if not isinstance(bundles, dict) or set(bundles) - set(ids):
+        raise ValueError("Trace comparison bundles must use selected architecture IDs")
     if not isinstance(pairs, dict) or set(pairs) - set(ids):
         raise ValueError("Trace pairs must be keyed by selected architecture id")
     stages = []
@@ -116,6 +124,13 @@ def build_plan(config_path: Path) -> dict:
         if any(not Path(path).is_file() for path in paths):
             raise ValueError("Trace pairs must reference files")
         trace_input = dict(zip(("baseline", "candidate"), paths))
+        if profile.id in bundles:
+            bundle_paths = _paths(
+                [bundles[profile.id]], config_path.parent, "trace comparison bundle"
+            )
+            if not Path(bundle_paths[0]).is_file():
+                raise ValueError("Trace comparison bundle must be a file")
+            trace_input["bundle"] = bundle_paths[0]
         context = PlanningContext(
             profile,
             scenarios,
@@ -126,6 +141,7 @@ def build_plan(config_path: Path) -> dict:
             performance_contract=performance_contract,
             deployment_contract=deployment_contract,
             kernel_contract=kernel_contract,
+            trace_contract=trace_contract,
         )
         stages.append(
             StagePlan(
@@ -165,6 +181,7 @@ def build_plan(config_path: Path) -> dict:
         "performance_contract": performance_contract,
         "deployment_contract": deployment_contract,
         "kernel_contract": kernel_contract,
+        "trace_contract": trace_contract,
         "scenario_count_per_architecture": len(scenarios),
         "scenario_count_total": len(scenarios) * len(profiles),
         "scenarios": scenarios,
@@ -175,7 +192,8 @@ def build_plan(config_path: Path) -> dict:
             "Knowledge paths are references, not automatic retrieval or executable policy.",
             "Service, forward and operator evidence have separate measurement boundaries.",
             "Offline distributed selection is a separate command; "
-            "live deployment and trace comparison are not implemented.",
+            "live deployment is not implemented. "
+            "Trace comparison is an independent offline command.",
             "Budgets and allowed-change constraints are recorded, not enforced by the planner.",
         ],
     }
@@ -193,6 +211,7 @@ def write_plan(config_path: Path, output: Path, sink=None) -> dict:
         write_json(output / "performance.contract.json", plan["performance_contract"])
         write_json(output / "deployment.contract.json", plan["deployment_contract"])
         write_json(output / "kernel.contract.json", plan["kernel_contract"])
+        write_json(output / "trace.contract.json", plan["trace_contract"])
         lines = [
             "# Multi-architecture campaign plan",
             "",

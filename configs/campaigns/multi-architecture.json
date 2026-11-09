@@ -14,6 +14,7 @@
   "performance_contract": "../performance/prefill.json",
   "deployment_contract": "../deployment/long-context.json",
   "kernel_contract": "../kernel/prefill.json",
+  "trace_contract": "../traces/prefill.json",
   "max_scenarios": 1000,
   "deployment": {
     "objective": "balanced",

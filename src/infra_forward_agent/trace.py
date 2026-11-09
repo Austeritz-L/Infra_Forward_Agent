@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import gzip
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from .contracts import number, read_json
@@ -27,6 +27,7 @@ class Slice:
     signature: str = "unknown"
     invocation: str | None = None
     layer: str = "unknown"
+    context: dict = field(default_factory=dict, compare=False, hash=False)
 
 
 @dataclass(frozen=True)
@@ -35,9 +36,17 @@ class Trace:
     windows: dict[int, tuple[float, float]]
     ignored_events: int
     clipped_events: int = 0
+    unsupported_gpu_events: int = 0
 
 
-def load_chrome(path: Path, *, rank: int = 0, marker: str = "forward") -> Trace:
+def load_chrome(
+    path: Path,
+    *,
+    rank: int = 0,
+    marker: str = "forward",
+    window_selector: dict | None = None,
+    selected_rank_only: bool = False,
+) -> Trace:
     """Import one forward/rank. Chrome ts/dur are in us regardless of displayTimeUnit."""
     if path.suffix == ".gz":
         with gzip.open(path, "rt", encoding="utf-8") as handle:
@@ -51,8 +60,19 @@ def load_chrome(path: Path, *, rank: int = 0, marker: str = "forward") -> Trace:
     windows: dict[int, tuple[float, float]] = {}
     raw: list[Slice] = []
     ignored = 0
+    unsupported = []
     for event in events:
+        if not isinstance(event, dict):
+            raise ValueError("Trace events must be JSON objects")
         if event.get("ph") != "X":
+            categories = set(str(event.get("cat", "")).lower().split(","))
+            if categories.intersection(GPU_CATEGORIES):
+                args = event.get("args", {})
+                if not isinstance(args, dict):
+                    raise ValueError("Trace event args must be an object")
+                event_rank = args.get("rank", rank)
+                if not selected_rank_only or event_rank == rank:
+                    unsupported.append((event_rank, event.get("ts")))
             ignored += 1
             continue
         name = str(event.get("name", ""))
@@ -61,9 +81,21 @@ def load_chrome(path: Path, *, rank: int = 0, marker: str = "forward") -> Trace:
             ignored += 1
             continue
         args = event.get("args", {})
+        if not isinstance(args, dict):
+            raise ValueError("Trace event args must be an object")
         event_rank = args.get("rank", rank)
         if type(event_rank) is not int or event_rank < 0:
             raise ValueError("rank must be a nonnegative integer")
+        if selected_rank_only and event_rank != rank:
+            ignored += 1
+            continue
+        if (
+            name == marker
+            and window_selector is not None
+            and any(args.get(key) != value for key, value in window_selector.items())
+        ):
+            ignored += 1
+            continue
         start = number(event.get("ts"), "event.ts")
         end = number(start + number(event.get("dur"), "event.dur", positive=True), "event.end")
         if name == marker:
@@ -72,8 +104,8 @@ def load_chrome(path: Path, *, rank: int = 0, marker: str = "forward") -> Trace:
             windows[event_rank] = (start, end)
             continue
         hint = args.get("ifa_kind")
-        if hint is not None and hint not in {"compute", "communication", "memory"}:
-            raise ValueError("ifa_kind must be compute, communication, or memory")
+        if hint is not None and hint not in {"compute", "communication", "memory", "mixed"}:
+            raise ValueError("ifa_kind must be compute, communication, memory or mixed")
         lower = name.lower()
         if hint:
             kind, source = hint, "explicit"
@@ -104,6 +136,7 @@ def load_chrome(path: Path, *, rank: int = 0, marker: str = "forward") -> Trace:
                 kind,
                 source,
                 *metadata,
+                {key: value for key, value in args.items() if key.startswith("ifa_")},
             )
         )
     clipped = []
@@ -115,25 +148,17 @@ def load_chrome(path: Path, *, rank: int = 0, marker: str = "forward") -> Trace:
         begin, finish = max(start, item.start_us), min(end, item.end_us)
         if finish > begin:
             clipping_count += begin != item.start_us or finish != item.end_us
-            clipped.append(
-                Slice(
-                    item.name,
-                    item.rank,
-                    item.device,
-                    item.stream,
-                    begin,
-                    finish,
-                    item.kind,
-                    item.classification,
-                    item.operator,
-                    item.compute_type,
-                    item.signature,
-                    item.invocation,
-                    item.layer,
-                )
-            )
+            clipped.append(replace(item, start_us=begin, end_us=finish))
         else:
             ignored += 1
     if not clipped:
         raise ValueError("No GPU complete events inside a forward window")
-    return Trace(clipped, windows, ignored, clipping_count)
+    unsupported_count = sum(
+        event_rank in windows
+        and (
+            timestamp is None
+            or windows[event_rank][0] <= number(timestamp, "event.ts") < windows[event_rank][1]
+        )
+        for event_rank, timestamp in unsupported
+    )
+    return Trace(clipped, windows, ignored, clipping_count, unsupported_count)

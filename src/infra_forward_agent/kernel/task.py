@@ -15,9 +15,12 @@ def digest(value: object) -> str:
 
 
 class Sources:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, reserved: set[str] | None = None):
         self.root = root.resolve()
         self.manifest: dict[str, str] = {}
+        self.reserved = (
+            reserved if reserved is not None else {"task.json", "evaluation.json", "manifest.json"}
+        )
 
     def path(self, relative: str) -> Path:
         if (
@@ -25,7 +28,7 @@ class Sources:
             or Path(relative).is_absolute()
             or ".." in Path(relative).parts
             or Path(relative).as_posix() != relative
-            or relative in {"task.json", "evaluation.json", "manifest.json"}
+            or relative in self.reserved
         ):
             raise ValueError("Use non-reserved canonical relative kernel artifact paths")
         path = (self.root / relative).resolve()

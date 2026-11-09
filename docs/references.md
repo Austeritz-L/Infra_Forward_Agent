@@ -23,3 +23,7 @@ v0.6算子来源与适用范围见[第四模块](domains/kernel.md)及
 [架构调查配置](../configs/kernel/architectures.json)。KDA按acdd793固定流程版本借鉴任务/证据设计；
 MUTLASS、NVIDIA PTX/CUDA及各厂商profiler文档只作为能力调查来源，逐工具链核实实际产物。
 SM103不继承未经核实的SM100 integer tcgen05或资源表，CPU合成数据不能认证任何后端。
+
+
+v0.7采用[Trace对齐规范](domains/traces.md)，参考Perfetto的导入/查询分离和Nsight Systems的
+focused capture/annotation方法；没有集成它们的执行后端，也不因时间重叠断言因果关键路径。

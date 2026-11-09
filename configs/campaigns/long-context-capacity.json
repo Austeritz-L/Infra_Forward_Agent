@@ -62,6 +62,7 @@
   ],
   "deployment_contract": "../deployment/long-context.json",
   "kernel_contract": "../kernel/prefill.json",
+  "trace_contract": "../traces/prefill.json",
   "scenario_tiers": [
     "long_context"
   ]

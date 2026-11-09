@@ -5,7 +5,14 @@ class TraceAgent:
     def plan(self, context: PlanningContext) -> StagePlan:
         enabled = context.traces.get("enabled", True)
         baseline, candidate = context.traces.get("baseline"), context.traces.get("candidate")
-        status = "skipped" if not enabled or not (baseline and candidate) else "needs_adapter"
+        bundle = context.traces.get("bundle")
+        status = (
+            "skipped"
+            if not enabled or not (bundle or baseline and candidate)
+            else "needs_offline_validation"
+            if bundle
+            else "needs_adapter"
+        )
         return StagePlan(
             id=context.task_id("traces"),
             module="traces",
@@ -25,9 +32,18 @@ class TraceAgent:
             options={
                 "baseline": baseline,
                 "candidate": candidate,
+                "bundle": bundle,
+                "contract": context.trace_contract,
+                "offline_comparator": "ifa trace-compare <bundle.json> --output <new-directory>",
                 "reason": "disabled"
                 if not enabled
-                else ("trace pair provided" if baseline and candidate else "no trace pair yet"),
+                else (
+                    "comparison bundle provided"
+                    if bundle
+                    else "trace pair needs semantic manifest"
+                    if baseline and candidate
+                    else "no trace pair yet"
+                ),
                 "causal_critical_path": "requires_dependency_evidence",
             },
         )

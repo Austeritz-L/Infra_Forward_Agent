@@ -199,3 +199,8 @@ amount/unit/amount_basis、ceiling_id、source和相同compatibility_key。同�
 
 没有集成上游源码，也没有启动硬件采集。经验上“流量减少但完整forward未加速”、重叠算子不能
 相加、缺失metric不能补0等原则保留；历史结论不作为当前硬件上限或已确认瓶颈。
+
+
+v0.7的[独立Trace比较](traces.md)复用本模块时间并集语义，并对齐两版的实际工作和采集协议。
+mixed/unknown事件保留总busy；component_split_known=false时，C/N值仅描述已知分类子集，
+不能将未分解的融合通信理解为0。新比较器将对应分量delta设为null。

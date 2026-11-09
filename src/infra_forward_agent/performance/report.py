@@ -112,7 +112,7 @@ def build_report(path: Path) -> dict:
     for spec in data.get("traces", []):
         captures[spec["capture_id"]].append(spec)
     for capture, specs in captures.items():
-        slices, windows, ignored, clipped = [], {}, 0, 0
+        slices, windows, ignored, clipped, unsupported = [], {}, 0, 0, 0
         for spec in specs:
             sources.add(spec["path"])
             trace = load_chrome(
@@ -126,6 +126,7 @@ def build_report(path: Path) -> dict:
             windows.update(trace.windows)
             ignored += trace.ignored_events
             clipped += trace.clipped_events
+            unsupported += trace.unsupported_gpu_events
         observed = {item.rank for item in slices}
         if observed - set(ranks):
             raise ValueError("Trace contains unexpected ranks")
@@ -137,7 +138,8 @@ def build_report(path: Path) -> dict:
                 "all_ranks_present": observed == set(ranks),
                 "missing_ranks": sorted(set(ranks) - observed),
                 "clipped_gpu_events": clipped,
-                "complete_forward_window": clipped == 0,
+                "complete_forward_window": clipped == 0 and unsupported == 0,
+                "unsupported_gpu_events": unsupported,
                 "rank_local_window_us": durations,
                 "rank_duration_max_to_min": max(durations.values()) / min(durations.values()),
                 **timeline,

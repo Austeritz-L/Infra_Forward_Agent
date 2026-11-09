@@ -103,6 +103,13 @@ def analyze_timeline(trace: Trace) -> dict:
                 "compute_union_us": compute,
                 "communication_union_us": communication,
                 "memory_union_us": union_us(by_kind["memory"]),
+                "mixed_union_us": union_us(
+                    (i.start_us, i.end_us) for i in items if i.kind == "mixed"
+                ),
+                "unknown_kind_union_us": union_us(
+                    (i.start_us, i.end_us) for i in items if i.kind == "unknown"
+                ),
+                "component_split_known": not any(i.kind in {"mixed", "unknown"} for i in items),
                 "compute_communication_overlap_us": overlap,
                 "communication_without_compute_us": max(0.0, communication - overlap),
                 "communication_overlap_fraction": overlap / communication

@@ -6,10 +6,11 @@ Build an extensible multi-architecture agent for scenario testing, performance a
 capacity/performance selection, operator optimization and optional trace comparison. Keep runtime imports
 accelerator- and LLM-provider-independent. Read README.md and docs/architecture.md first.
 Read docs/framework.md, docs/domains/testing.md and docs/domains/performance.md for domain contracts.
-v0.6 adds deep-analysis-gated kernel handoff/acceptance to distributed selection and artifact replay;
+v0.7 adds semantic trace comparison and migration hypotheses to the offline evidence workflows;
 none is an autonomous live optimizer. Read docs/domains/deployment.md for capacity/topology work. Document capability status honestly.
 
 Read docs/domains/kernel.md and configs/kernel before operator work.
+Read docs/domains/traces.md before trace comparison work.
 
 ## Working rules
 
@@ -18,6 +19,11 @@ Read docs/domains/kernel.md and configs/kernel before operator work.
   analysis blocks implementation handoff; repeat profiling and verify the hypothesis after the change.
 - A fast kernel is not acceptance: require frozen-reference precision before/after native operator,
   coordinated prefill and full service rounds, plus preserved long-context quality/SLO and KV budget.
+- Match semantic workload/window/rank/shape/layer before trace deltas. Never align by absolute time,
+  ordinal kernel or Stream number; explicit fusion mappings must be disjoint. Unmatched work is not zero.
+- Report absolute work and exposure alongside shares. Missing ranks/clipping/unknown GPU phases disable
+  full comparisons; mixed kernels do not reveal compute/communication components. Profile changes never
+  establish service gain or a causal critical path. Preserve source hashes and all matched window pairs.
 - Keep reusable workflow in this repo, task patches and generated evidence in ignored workspaces/ and runs/.
 - Fix workload, image digest, weights/layout/quantization, runtime and measurement boundaries before comparisons.
 - Use precision -> unprofiled timing -> precision; require all ranks and all workload conditions.

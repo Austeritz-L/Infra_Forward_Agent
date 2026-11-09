@@ -30,3 +30,6 @@ jobs:
       - run: ifa kernel-demo --architecture moore-s5000 --output runs/ci-kernel-s5000
       - run: ifa kernel-demo --architecture nvidia-sm90 --output runs/ci-kernel-sm90
       - run: ifa kernel-demo --architecture nvidia-sm103 --output runs/ci-kernel-sm103
+      - run: ifa trace-demo --architecture moore-s5000 --output runs/ci-traces-s5000
+      - run: ifa trace-demo --architecture nvidia-sm90 --output runs/ci-traces-sm90
+      - run: ifa trace-demo --architecture nvidia-sm103 --output runs/ci-traces-sm103

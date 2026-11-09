@@ -199,3 +199,7 @@ fingerprint，旧候选证据不能复用。评估按报告声明与schema核对
 输入身份/格式错误拒绝；坏baseline停止比较，坏candidate记录拒绝后继续；缺分析时不进入候选验收。
 保留input/manifest、kernel.task/evaluation.json、docs/draft/plan、candidates.jsonl、报告及JSONL事件，
 拒绝覆盖已有目录。v1 replay与分布式独立契约保持原行为，不因新增模块而放宽旧门禁。
+
+
+v0.7可将原始evaluation bundle链接到[Trace对比](traces.md)，重新执行本模块确定性验收，再调查
+候选前后热点/暴露迁移。Trace模块不修改本模块的precision/三层native/KV门禁。

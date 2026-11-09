@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "focus": "prefill",
+  "status": "offline_matched_window_comparison",
+  "alignment": [
+    "fixed architecture/model/weights/image/runtime/tokenizer/dataset/cache format",
+    "same physical placement, topology and service condition",
+    "same actual token/cache/chunk/head boundary and selected logical work",
+    "rank-local timestamp origin subtraction without time stretching",
+    "operator/type/shape/layer semantic keys, explicit verified fusion/rename mappings",
+    "logical invocation and collective IDs; physical stream IDs mapped to roles"
+  ],
+  "capture_contract": [
+    "complete all-rank/all-stream Chrome X GPU events",
+    "explicit rank/device/clock source and window selector",
+    "same timeline tool/version/options/cache/replay/selection policy",
+    "predeclared representative matched windows, no reuse of identical file/window",
+    "overhead checks, dropped-event accounting and source correlation"
+  ],
+  "defaults": {
+    "min_matched_pairs": 3,
+    "stable_dominance_fraction": 1,
+    "change_fraction": 0.1,
+    "absolute_floor_us": 2
+  },
+  "metrics": {
+    "prefill": "rank-local selected window wall, work sum, busy/idle union; separate imported native statistics",
+    "operator": "event count, work and share, union/wall coverage, exclusive exposure, logical invocation spans",
+    "communication": "matched logical collective/group/op/dtype/payload, work/union, compute overlap and exposed time; pure wire time unknown",
+    "streams": "distinct physical-stream overlap; explicit role union and role-pair intersection",
+    "migration": "absolute work increase vs exposure increase with stable work vs relative share only; no confirmed causal bottleneck"
+  },
+  "insufficient_evidence": {
+    "identity_or_workload_mismatch": "incomparable; suppress deltas",
+    "missing_rank_clipped_dropped_unknown_mapping": "partial; retain independent observations, suppress deltas and summaries",
+    "mixed_fused_kernel": "keep total interval; unresolved compute/communication split is null",
+    "unknown_absence": "unmatched; never zero-fill a missing operator",
+    "missing_native": "trace hypotheses only; no service gain claim",
+    "topology_change": "rank-local ratios require a new workload normalization contract; use deployment module"
+  },
+  "native_link": "optional original kernel evaluation bundle plus candidate ID; revalidate testing, deployment, deep analysis, precision and all native rounds; never use profile time as promotion",
+  "outputs": [
+    "trace.comparison.json",
+    "normalized.events.jsonl",
+    "bottleneck-migration.json",
+    "next-tasks.json",
+    "report.md",
+    "input/manifest.json",
+    "events.jsonl"
+  ],
+  "not_implemented": [
+    "live profiler or binary vendor trace reader",
+    "Perfetto SQL backend",
+    "cross-host clock synchronization and collective arrival skew",
+    "causal critical-path DAG or optimization executor"
+  ],
+  "auto_deploy": false
+}

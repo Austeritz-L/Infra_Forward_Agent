@@ -20,6 +20,8 @@ from .kernel.workflow import write_kernel_evaluation, write_kernel_task
 from .performance.demo import make_performance_demo
 from .performance.report import write_report
 from .trace import load_chrome
+from .trace_comparison.demo import make_trace_demo
+from .trace_comparison.report import write_comparison
 
 
 def emit(event: dict) -> None:
@@ -74,6 +76,18 @@ def main(argv: list[str] | None = None) -> int:
         choices=["moore-s5000", "nvidia-sm90", "nvidia-sm103"],
     )
     kernel_demo.add_argument("--output", type=Path, required=True)
+    trace_comparison = sub.add_parser(
+        "trace-compare", help="Align semantic prefill windows and compare traces"
+    )
+    trace_comparison.add_argument("bundle", type=Path)
+    trace_comparison.add_argument("--output", type=Path, required=True)
+    trace_demo = sub.add_parser("trace-demo", help="Synthetic matched trace comparison; no GPU")
+    trace_demo.add_argument(
+        "--architecture",
+        default="nvidia-sm90",
+        choices=["moore-s5000", "nvidia-sm90", "nvidia-sm103"],
+    )
+    trace_demo.add_argument("--output", type=Path, required=True)
     demo = sub.add_parser("demo", help="Replay synthetic evidence; requires no GPU or model API")
     demo.add_argument("--output", type=Path, required=True)
     fixtures = sub.add_parser("fixtures", help="Write editable synthetic input evidence")
@@ -121,6 +135,13 @@ def main(argv: list[str] | None = None) -> int:
             with tempfile.TemporaryDirectory(prefix="ifa-kernel-") as directory:
                 _, bundle = make_kernel_demo(Path(directory), args.architecture)
                 write_kernel_evaluation(bundle, args.output, emit)
+        elif args.command == "trace-compare":
+            write_comparison(args.bundle, args.output, emit)
+        elif args.command == "trace-demo":
+            with tempfile.TemporaryDirectory(prefix="ifa-trace-") as directory:
+                write_comparison(
+                    make_trace_demo(Path(directory), args.architecture), args.output, emit
+                )
         elif args.command == "demo":
             with tempfile.TemporaryDirectory(prefix="ifa-demo-") as directory:
                 replay(make_demo(Path(directory)), args.output, emit)

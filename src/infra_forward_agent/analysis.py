@@ -46,6 +46,8 @@ def analyze(trace: Trace) -> dict:
                 "idle_us": max(0.0, end - start - busy),
                 "compute_us": compute,
                 "communication_us": comm,
+                "mixed_us": union_us((i.start_us, i.end_us) for i in items if i.kind == "mixed"),
+                "component_split_known": not any(i.kind in {"mixed", "unknown"} for i in items),
                 "memory_us": union_us(by_kind["memory"]),
                 "compute_communication_overlap_us": overlap,
                 "communication_without_compute_us": max(0.0, comm - overlap),
@@ -69,6 +71,7 @@ def analyze(trace: Trace) -> dict:
             "Hotspot work sums can exceed forward wall time because streams overlap.",
             "Temporal overlap is not causal critical-path attribution or an achievable speedup.",
             "Ranks use local windows; cross-host clocks are not assumed synchronized.",
+            "Mixed components are unresolved; component times include known classifications only.",
             "Missing ranks/devices and KV capacity cannot be inferred from this trace alone.",
         ],
     }
