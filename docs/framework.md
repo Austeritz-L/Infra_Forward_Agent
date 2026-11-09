@@ -3,6 +3,7 @@
 项目目标是一个覆盖服务测试、forward 性能分析、分布式取舍、算子优化与 trace 对比的综合 Agent。
 当前实现了五模块的规划总控，以及既有证据的 replay 验收。真实执行器和领域策略逐项展开。
 `agents` 表示逻辑职责，当前不是五个后台进程，也不会自动调用 LLM 或派发子代理。
+v0.3 的第一领域已细化为 [Prefill 服务测试规范](domains/testing.md)，默认不做 decode 验收。
 
 ## 总控与共享上下文
 
@@ -57,7 +58,8 @@ SM90 和 SM103 共享 CUDA 这个 runtime 身份，不共享未经核实的 kern
 
 ## 用户控制的内容
 
-- `configs/scenarios/baseline.json`：服务/forward/operator 的 scope、phase 与展开轴。
+- `configs/scenarios/prefill-service.json`：当前默认 suite v2，服务/prefill/operator 同源矩阵及契约。
+  baseline.json 保留为旧 v1 示例，支持原来的通用 phase 设计；不作为当前默认验收矩阵。
 - `configs/campaigns/multi-architecture.json`：架构列表、部署目标、资源约束、可选 trace pair 和经验路径。
 - `deployment.objective`：capacity / performance / balanced。当前仅记录规划目标，不会自动做部署。
 - `playbooks`、`knowledge`：用户方法与实测案例。当前记录引用，尚无检索或自动执行规则。
@@ -84,6 +86,7 @@ forward exposure 和因果关键路径仍需依赖证据，不能拿多 Stream �
 ```text
 campaign.plan.json       # 架构快照、五模块任务、依赖、缺证据和实现边界
 scenario.matrix.json     # 规范化场景，不是测试结果
+testing.contract.json    # Cache/发压/指标/验收/输入捕获规范；尚未运行时执行
 events.jsonl             # planning_started / stage_planned / planning_completed
 plan.md                  # 可审查计划
 ```

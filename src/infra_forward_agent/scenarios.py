@@ -7,6 +7,10 @@ import math
 
 
 def expand_suite(data: dict, *, max_cases: int = 1000) -> list[dict]:
+    if isinstance(data, dict) and data.get("schema_version") == 2:
+        from .testing import expand_prefill_suite
+
+        return expand_prefill_suite(data, max_cases=max_cases)
     if not isinstance(data, dict) or data.get("schema_version") != 1:
         raise ValueError("Scenario suite must be an object with schema_version=1")
     if type(max_cases) is not int or max_cases < 1:

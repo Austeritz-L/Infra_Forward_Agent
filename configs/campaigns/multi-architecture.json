@@ -10,8 +10,8 @@
   },
   "architectures": ["moore-s5000", "nvidia-sm90", "nvidia-sm103"],
   "architecture_profiles": [],
-  "scenario_suite": "../scenarios/baseline.json",
-  "max_scenarios": 100,
+  "scenario_suite": "../scenarios/prefill-service.json",
+  "max_scenarios": 1000,
   "deployment": {
     "objective": "balanced",
     "allowed_axes": ["tp", "ep", "pp", "dp"],

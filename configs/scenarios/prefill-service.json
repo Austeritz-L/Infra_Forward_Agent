@@ -1,0 +1,148 @@
+{
+  "schema_version": 2,
+  "focus": "prefill",
+  "description": "Prefill-focused service workloads and service-captured forward/operator replays. Planning only.",
+  "enabled_tiers": ["smoke", "core"],
+  "generation": {"max_new_tokens": 1, "temperature": 0, "decode_benchmark": false},
+  "length_mixes": {
+    "short-medium-long": {"token_lengths": [2048, 8192, 32768], "request_weights": [0.5, 0.3, 0.2], "seed": 42},
+    "historical-conversations": {"buckets": [[512, 8192], [8193, 32768], [32769, 131072]], "source": "frozen user-supplied conversation manifest", "history": "dataset assistant history, not model-generated conversation", "token_lengths": "actual post-template tokenizer lengths; no forced truncation", "seed": 20260929}
+  },
+  "contracts": {
+    "cache_profiles": {
+      "cold-miss": {
+        "target_cached_fraction": 0,
+        "required_state": "weights/JIT warm; reusable prefix/KV cold across every enabled tier",
+        "preparation": "drain; flush or isolate all served cache tiers; confirm completion; independent prefixes within each concurrent wave",
+        "verification": "prefill owner request-level counters; cached tokens must be zero; no random salt length extension",
+        "unsupported_action": "blocked or inconclusive, never assume a miss"
+      },
+      "partial-50": {
+        "target_cached_fraction": 0.5,
+        "preparation": "warm only the token-aligned common prefix; keep remaining suffix uncached",
+        "verification": "compare actual cached/new tokens against page-aligned target; tolerance=max(0.02, page_tokens/prompt_tokens)"
+      },
+      "partial-90": {
+        "target_cached_fraction": 0.9,
+        "preparation": "warm only the token-aligned common prefix; keep remaining suffix uncached",
+        "verification": "compare actual cached/new tokens against page-aligned target; tolerance=max(0.02, page_tokens/prompt_tokens)"
+      },
+      "warm-full-prefix": {
+        "target_cached_fraction": 1,
+        "preparation": "replay identical prompt after warmup, with frozen cache namespace",
+        "verification": "record mandatory tail recomputation/page rounding; never require zero work if backend recomputes logits",
+        "no_forward_work": "service remains valid; forward/operator entry marked not_applicable with evidence, not zero-time speedup"
+      },
+      "natural-history": {
+        "target_cached_fraction": null,
+        "preparation": "frozen disjoint per-user histories, deterministic session order; do not cycle dataset",
+        "verification": "measure actual token-weighted hit rate by length/turn/tenant; do not assert an arbitrary 90% target"
+      },
+      "eviction-churn": {
+        "target_cached_fraction": null,
+        "preparation": "construct rotating working set relative to measured reusable KV capacity",
+        "verification": "record reuse distance, eviction/reload, tier-hit counters, admission and recovery"
+      },
+      "host-restore": {
+        "target_cached_fraction": null,
+        "required_capability": "verified host-tier cache and per-tier observability",
+        "preparation": "device tier cold, host tier warm, storage excluded or separately accounted",
+        "verification": "prefill-owner host restore counters plus response parity; client metadata alone is insufficient"
+      },
+      "storage-restore": {
+        "target_cached_fraction": null,
+        "required_capability": "verified storage-tier cache and per-tier observability",
+        "preparation": "device/host cold; storage data published and restore completion observable",
+        "verification": "prefill-owner storage restore counters and publication/ready events; no guessed availability"
+      }
+    },
+    "load_protocols": {
+      "smoke": {"model": "bounded", "warmup": "unscored and cache-disjoint", "rounds": 1, "requests_per_round": 8, "role": "correctness/smoke only; no promotion or tail-SLO claims"},
+      "cold-fixed-work": {"model": "bounded_closed_loop", "warmup": "up to 8 rounds; latest 3 elapsed spreads <3% and no new JIT", "rounds": 5, "requests_per_round": 64, "drain": "all submitted requests terminal", "cache_reset": "before each round after drain, never flush while measuring another wave"},
+      "cache-fixed-work": {"model": "bounded_closed_loop", "rounds": 5, "requests_per_round": 64, "warmup": "JIT warm first, then establish exactly the declared cache state", "drain": "all submitted requests terminal; re-establish state identically for each arm/round"},
+      "locust-fixed-work": {"model": "closed_loop_one_inflight_per_user", "requests_per_user": 200, "rounds": 5, "wait_time_s": 0, "spawn_rate_users_per_s": 2, "partition": "global seed + worker id + user id, disjoint sessions across workers", "drain": "finish fixed work and every in-flight SSE; include final drain in elapsed", "dataset_wrap": "fail validity; never silently repeat"},
+      "locust-steady": {"model": "closed_loop_one_inflight_per_user", "rounds": 1, "warmup_s": 120, "steady_offer_s": 1200, "spawn_rate_users_per_s": 2, "wait_time_s": 0, "drain_timeout_s": 300, "dataset_wrap": "fail validity", "role": "one complete run is stability evidence only; performance claims require independent repeated paired runs and confidence gate"},
+      "locust-ramp": {"model": "closed_loop_staircase", "users": [1, 4, 12, 16, 32, 16, 4, 1], "seconds_per_plateau": 180, "transition_excluded_from_plateau_statistics": true, "report": "each plateau and complete ramp; user count is not fixed RPS"},
+      "burst-recovery": {"model": "synchronized_burst", "rounds": 5, "bursts_per_round": 5, "inter_burst_idle_s": 30, "report": "per-burst queue/TTFT plus recovery to pre-burst service health"},
+      "arrival-rate": {"model": "open_loop_arrivals", "reference_rate": "freeze baseline sustainable rate from separate calibration", "queue_bound": "must be configured before execution", "report": "offered/admitted/completed/rejected rates, client dispatch lateness and server queue", "role": "characterization above saturation; distinct from Locust user-based closed loop"},
+      "cache-pressure": {"model": "closed_loop_rotating_working_set", "steady_offer_s": 1200, "working_set_basis": "measured reusable KV capacity after static allocations", "report": "per-tier hit/eviction, memory, stalls, retraction and post-pressure recovery"},
+      "tier-restore": {"model": "bounded_closed_loop", "rounds": 5, "requests_per_round": 64, "report": "per-tier restore, ready/publication timing, actual new tokens and response parity"},
+      "context-boundary": {"model": "bounded_closed_loop", "rounds": 5, "requests_per_round": 64, "admission": "check actual model context and owned memory before each condition", "report": "supported cases qualify normally; unsupported cases explicitly blocked or not_applicable"}
+    },
+    "metrics": {
+      "service": {
+        "primary": ["ttft_ms.p50", "ttft_ms.p95", "logical_input_tokens_per_s", "new_prefill_tokens_per_s", "requests_per_s"],
+        "diagnostic": ["ttft_ms.p99", "request_e2e_ms", "queue_wait_ms_if_observed", "actual_inflight", "cached_token_fraction_by_tier", "completed/failed/unfinished", "peak_memory_by_rank"],
+        "not_in_scope": ["TPOT", "ITL", "decode_forward_ms", "decode_tokens_per_s"],
+        "boundary": "request send to first semantic token; include HTTP/router/queue/transfer; not pure forward latency",
+        "throughput_boundary": "fixed work: first send to last terminal SSE; timed load: report offered window plus fully drained cohort window separately"
+      },
+      "forward": {
+        "primary": ["prefill_step_wall_ms.p50", "prefill_step_wall_ms.p95", "actual_new_tokens_per_s"],
+        "diagnostic": ["per_rank_gpu_interval_ms", "extend_query_lengths", "cached_context_lengths", "microbatch/chunk_count", "communication_us", "peak_workspace_bytes"],
+        "boundary": "actual prefill/extend model forward with all participating streams joined; record per-rank intervals, never sum ranks as wall time",
+        "sampling_and_http": "excluded; logits/head inclusion explicitly fixed in capture manifest"
+      },
+      "operator": {
+        "primary": ["operator_us.p50", "operator_us.p95", "shape_weighted_operator_work_us", "output_error_by_contract"],
+        "diagnostic": ["calls", "per_rank_routing_counts", "padding_ratio", "bytes/flops_if_defined", "bandwidth/compute_efficiency_if_evidenced", "register/shared_memory/spill_if_available"],
+        "boundary": "captured operator call contract; full wrapper and kernel-only intervals labeled separately",
+        "weighting": "service-captured call count/shape/routing weights; never unweighted mean of speedup ratios",
+        "promotion": "requires forward and service requalification for the same workload ids"
+      }
+    },
+    "acceptance": {
+      "verdicts": ["pass", "fail", "inconclusive", "not_applicable", "blocked"],
+      "integrity": {
+        "qualification": "zero HTTP/transport/SSE/parse errors, zero missing terminal markers, one generated token and valid finish reason; no unfinished or silently retried requests",
+        "input_identity": "exact tokenized prompt/template/tokenizer/seed/output-cap manifest matched across arms; requested lengths verified after tokenization",
+        "correctness": "paired first-token IDs all equal; forward/operator tolerances must reference an explicit model/dtype contract, checked before and after timing on all ranks",
+        "formal_runtime": "no new JIT, profiler, debug synchronization, GPU faults, watchdogs, unexpected restarts, OOM or retractions in qualification",
+        "tail_samples": {"p95_min_per_condition": 200, "p99_min_per_condition": 1000, "below_minimum": "inconclusive for that tail metric, not automatic pass"},
+        "paired_fixed_work_rounds": 5,
+        "soak_complete_runs_min": 1,
+        "max_round_throughput_cv": 0.05,
+        "absolute_slo": null,
+        "missing_absolute_slo": "relative regression verdict only; production SLO acceptance remains unconfigured",
+        "missing_required_evidence": "inconclusive, never substitute success-only data"
+      },
+      "cache": {
+        "cold": "actual reusable cached tokens exactly zero on the prefill owner across enabled tiers",
+        "controlled_partial": "actual hit fraction within max(2 percentage points, one page/prompt length) of page-aligned target",
+        "warm_full": "tail recomputation/page rounding explicitly accounted; low/no new work never claimed as higher compute throughput",
+        "natural_or_pressure": "observed hit distribution reported and paired by manifest/turn; no invented target",
+        "tier_attribution": "per-owner stage/request accounting without TP/PP duplicate counts; report raw tier definitions and avoid double-counting inclusive counters"
+      },
+      "service": {"max_ttft_p50_regression": 0.05, "max_ttft_p95_regression": 0.05, "max_logical_input_throughput_regression": 0.03, "max_new_prefill_throughput_regression": 0.03, "comparison": "same condition and cache evidence; natural-history hit/mix changes require stratification before compute claims"},
+      "forward": {"max_p50_latency_regression": 0.03, "max_p95_latency_regression": 0.05, "max_new_token_throughput_regression": 0.03, "must_match_capture": true},
+      "operator": {"max_shape_weighted_work_regression": 0.03, "max_critical_shape_p95_regression": 0.05, "numeric_tolerance": "required explicit reference contract; no universal FP8/INT4 tolerance", "synthetic_routing": "diagnostic only unless shown representative by service capture"},
+      "promotion": {"min_designated_target_gain": 0.03, "paired_confidence": "95% interval lower bound >0, resample rounds/sessions rather than correlated tokens", "guardrails": "all required conditions pass non-regression and correctness; no demand that every condition improve 3%", "status": "design policy only; current planner does not evaluate runtime reports"},
+      "characterization": "above-saturation or capacity searches report clean rejection/queue/recovery separately; expected overload is not qualification success or a serving gain"
+    },
+    "capture_contract": {
+      "source": "separate representative capture after unprofiled service timing, same frozen workload and cache preparation",
+      "request_fields": ["workload_id", "request_id", "session_id", "turn", "worker_id", "prompt_token_ids_digest", "tokenizer/template/weights/image/revision digests", "actual_input_tokens", "actual_cached_tokens_by_tier", "actual_new_tokens", "output_token_id", "service_timestamps"],
+      "prefill_fields": ["request_ids", "step_id", "layer_id", "rank", "microbatch_members", "extend_query_lengths", "cached_context_lengths", "chunk_lengths", "cu_seqlens", "position_ids", "KV layout/page/index metadata", "dtype/quantization/scales/layout", "stream/event dependencies", "forward boundary"],
+      "operator_fields": ["prefill_step_id", "operator_name", "shape/stride/alignment", "input/output tensor digest or seed+generator", "reference/tolerance contract", "per-rank global/local tokens", "router counts/indices/weights", "padding", "expert placement", "workspace and state lifecycle", "original call-frequency weight"],
+      "linkage": "service workload -> actual prefill steps -> actual operator calls; concurrency is not microbatch size and prompt length is not uncached query length",
+      "missing_capture": "planned/unbound diagnostic only, never service-aligned qualification"
+    }
+  },
+  "workloads": [
+    {"id": "S00-smoke", "tier": "smoke", "purpose": "qualification", "load_protocol": "smoke", "axes": {"input_tokens": [2048, 8192], "request_concurrency": [1, 4], "cache_profile": ["cold-miss", "partial-90"]}},
+    {"id": "S01-cold-length", "tier": "core", "purpose": "qualification", "load_protocol": "cold-fixed-work", "axes": {"input_tokens": [2048, 4096, 6144, 8192, 16384, 32768], "request_concurrency": [1, 16], "cache_profile": ["cold-miss"]}},
+    {"id": "S02-controlled-prefix", "tier": "core", "purpose": "qualification", "load_protocol": "cache-fixed-work", "axes": {"input_tokens": [4096, 16384, 32768], "request_concurrency": [1, 16], "cache_profile": ["partial-50", "partial-90", "warm-full-prefix"]}},
+    {"id": "S03-locust-fixed-history", "tier": "core", "purpose": "qualification", "load_protocol": "locust-fixed-work", "axes": {"length_mix": ["historical-conversations"], "request_concurrency": [1, 12, 16], "cache_profile": ["cold-miss", "natural-history"]}},
+    {"id": "S04-concurrency-sweep", "tier": "extended", "purpose": "qualification", "load_protocol": "cold-fixed-work", "axes": {"input_tokens": [8192, 32768], "request_concurrency": [2, 4, 8, 32, 64], "cache_profile": ["cold-miss"]}},
+    {"id": "S05-mixed-length-fairness", "tier": "extended", "purpose": "qualification", "load_protocol": "cache-fixed-work", "axes": {"length_mix": ["short-medium-long"], "request_concurrency": [4, 16, 32], "cache_profile": ["cold-miss", "partial-90"]}, "requirements": ["report TTFT and completions by length bucket; no aggregate masking of long/short starvation"]},
+    {"id": "S06-stagger-control", "tier": "extended", "purpose": "qualification", "load_protocol": "cold-fixed-work", "axes": {"input_tokens": [32768, 98304], "request_concurrency": [16], "arrival_gap_ms": [0, 250], "cache_profile": ["cold-miss"]}},
+    {"id": "S07-locust-soak", "tier": "soak", "purpose": "qualification", "load_protocol": "locust-steady", "axes": {"length_mix": ["historical-conversations"], "request_concurrency": [12, 32], "cache_profile": ["natural-history"]}, "requirements": ["complete entire planned 20-minute offered window and drain; preserve every error and unfinished request"]},
+    {"id": "S08-ramp-hysteresis", "tier": "stress", "purpose": "characterization", "load_protocol": "locust-ramp", "axes": {"input_tokens": [8192, 32768], "cache_profile": ["cold-miss", "partial-90"]}},
+    {"id": "S09-burst-recovery", "tier": "stress", "purpose": "characterization", "load_protocol": "burst-recovery", "axes": {"input_tokens": [2048, 32768], "request_concurrency": [16, 32, 64], "cache_profile": ["cold-miss", "partial-90"]}},
+    {"id": "S10-arrival-knee", "tier": "stress", "purpose": "characterization", "load_protocol": "arrival-rate", "axes": {"input_tokens": [8192, 32768], "arrival_rate_ratio": [0.5, 0.8, 1, 1.2], "cache_profile": ["cold-miss"]}},
+    {"id": "S11-eviction-churn", "tier": "stress", "purpose": "characterization", "load_protocol": "cache-pressure", "axes": {"input_tokens": [8192, 32768], "request_concurrency": [4, 16], "working_set_ratio": [0.5, 1.2, 2], "cache_profile": ["eviction-churn"]}},
+    {"id": "S12-host-restore", "tier": "optional", "purpose": "qualification", "load_protocol": "tier-restore", "axes": {"input_tokens": [16384, 32768], "request_concurrency": [1, 16], "cache_profile": ["host-restore"]}},
+    {"id": "S13-storage-restore", "tier": "optional", "purpose": "qualification", "load_protocol": "tier-restore", "axes": {"input_tokens": [16384, 32768], "request_concurrency": [1, 16], "cache_profile": ["storage-restore"]}},
+    {"id": "S14-context-boundary", "tier": "optional", "purpose": "qualification", "load_protocol": "context-boundary", "axes": {"input_tokens": [65536, 98304, 131072], "request_concurrency": [1, 4, 16], "cache_profile": ["cold-miss", "partial-90"]}}
+  ]
+}

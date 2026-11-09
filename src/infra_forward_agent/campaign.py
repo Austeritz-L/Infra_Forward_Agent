@@ -57,6 +57,15 @@ def build_plan(config_path: Path) -> dict:
         raise ValueError("scenario_suite must point to a scenario suite JSON")
     suite = read_json(config_path.parent / suite_path)
     scenarios = expand_suite(suite, max_cases=data.get("max_scenarios", 1000))
+    testing_contract = {
+        "suite_schema_version": suite["schema_version"],
+        "focus": suite.get("focus"),
+        "generation": suite.get("generation", {}),
+        "enabled_tiers": suite.get("enabled_tiers", []),
+        "length_mixes": suite.get("length_mixes", {}),
+        "contracts": suite.get("contracts", {}),
+        "runtime_acceptance_implemented": False,
+    }
     deployment = data.get("deployment", {})
     if not isinstance(deployment, dict):
         raise ValueError("deployment must be an object")
@@ -91,6 +100,7 @@ def build_plan(config_path: Path) -> dict:
             deployment,
             {"enabled": traces.get("enabled", True), **trace_input},
             knowledge,
+            testing_contract=testing_contract,
         )
         stages.append(
             StagePlan(
@@ -126,6 +136,7 @@ def build_plan(config_path: Path) -> dict:
         "constraints": data.get("constraints", {}),
         "budget": data.get("budget", {}),
         "knowledge_paths": knowledge,
+        "testing_contract": testing_contract,
         "scenario_count_per_architecture": len(scenarios),
         "scenario_count_total": len(scenarios) * len(profiles),
         "scenarios": scenarios,
@@ -149,6 +160,7 @@ def write_plan(config_path: Path, output: Path, sink=None) -> dict:
         write_json(output / "config.json", read_json(config_path))
         write_json(output / "campaign.plan.json", plan)
         write_json(output / "scenario.matrix.json", plan["scenarios"])
+        write_json(output / "testing.contract.json", plan["testing_contract"])
         lines = [
             "# Multi-architecture campaign plan",
             "",

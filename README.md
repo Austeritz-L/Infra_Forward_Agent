@@ -20,7 +20,7 @@ Infra Forward Agent 希望把 Infra 工程师的优化工作组织成一个持�
 大规模 trace 的 SQL 分析后端计划参考 [Perfetto](https://perfetto.dev/docs/analysis/getting-started)。
 参考关系、版本与实现边界见 [references](docs/references.md)。
 
-## v0.2：五模块规划框架与可执行回放基线
+## v0.3：Prefill 测试规范、五模块规划与可执行回放基线
 
 新增 `ifa plan`：展开测试矩阵，为每个架构生成 preflight 和五模块任务，
 记录依赖、所需证据、用户经验引用及预期输出。它只做规划，不执行 GPU 作业或调用模型。
@@ -46,6 +46,7 @@ Infra Forward Agent 希望把 Infra 工程师的优化工作组织成一个持�
 | 流式事件、实验报告、CPU 演示与 CI | 已实现 |
 | 五模块任务规划、有限场景矩阵、多架构档案注册 | 已实现；不执行硬件作业 |
 | 用户经验目录、案例模板与任务引用 | 已实现；自动检索/应用待接入 |
+| Prefill 聚焦的测试 suite v2、15 场景族、服务→forward→算子绑定与验收契约 | 规范与规划已实现；真实发压、捕获、统计和 runtime gate 待接入 |
 | 自动抓取 Nsys / NCU / MCU、SSH / 容器执行 | 待实现；已有适配协议 |
 | LLM 规划、代码生成、KDA 执行桥接 | 待实现；已有任务模板与交接契约 |
 | 因果关键路径、完整跨 rank DAG、KV 容量实测 | 待实现 |
@@ -69,9 +70,16 @@ python -m unittest discover -s tests -v
 ruff check .
 ```
 
-示例 suite 在每架构展开 18 条场景，三个架构共 54 条，并生成 18 个阶段任务（含 preflight）。
-规划输出包含 campaign.plan.json、scenario.matrix.json、events.jsonl 和 plan.md。
+默认 suite 仅研究 prefill，统一输出 1 token，排除 decode/TPOT 验收。
+smoke+core 共 44 组服务工作负载，各自关联 forward/operator，合计 132 条规划记录/架构、
+三个架构共 396 条，生成 18 个阶段任务（含 preflight）。
+规划输出包含 campaign.plan.json、scenario.matrix.json、testing.contract.json、events.jsonl 和 plan.md。
 `execution_ready=false` 与 `needs_adapter` 表示真实 runner 尚未接入；未提供 trace pair 时跳过对比。
+
+完整 [测试矩阵与验收规范](docs/domains/testing.md) 包含冷算、Locust 固定工作量、20 分钟稳态、
+命中控制、长短混合、突发/阶梯/到达率、淘汰抖动与可选分层恢复。用户通过
+`configs/scenarios/prefill-service.json` 的 enabled_tiers、workloads 与 contracts 修改场景、Cache、
+发压协议、指标和初始验收门槛。全部 tiers 共 128 组 workload，384 条记录/架构，不会默认执行。
 
 演示包含两个 rank、C1/C16 两个条件和三轮候选：算子候选通过后通信成为新热点，
 overlap 候选继续通过，最后一个候选因精度失败被拒绝。所有轮次均保留。
@@ -110,6 +118,7 @@ ifa compare workspaces/replay-inputs/baseline/evidence.json \
 src/infra_forward_agent/
   campaign.py               # 多架构总控规划与五模块依赖
   scenarios.py              # service/forward/operator 场景矩阵
+  testing/                  # prefill suite v2 校验与同源三层测试规范
   agents/                   # testing/performance/deployment/kernel/traces 五个逻辑职责
   architectures/            # 可扩展注册表 + S5000/SM90/SM103 档案
   contracts.py              # 证据、策略、决策契约

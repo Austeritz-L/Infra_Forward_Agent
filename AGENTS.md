@@ -5,7 +5,8 @@
 Build an extensible multi-architecture agent for scenario testing, performance analysis, distributed
 capacity/performance selection, operator optimization and optional trace comparison. Keep runtime imports
 accelerator- and LLM-provider-independent. Read README.md and docs/architecture.md first.
-Read docs/framework.md for the five domain contracts. v0.2 adds planning to artifact replay;
+Read docs/framework.md and docs/domains/testing.md for domain contracts. v0.3 adds a prefill-only
+suite v2 with aligned service/forward/operator workloads to campaign planning and artifact replay;
 neither mode is an autonomous live optimizer. Document capability status honestly.
 
 ## Working rules
@@ -25,6 +26,11 @@ neither mode is an autonomous live optimizer. Document capability status honestl
   per-rank memory; topology alternatives need fixed physical resources and global workload.
 - Read task-relevant playbooks and knowledge cases when operating as a coding agent. The CLI planner
   only records knowledge references; do not claim automatic retrieval or policy enforcement.
+- Current testing focus is prefill: service requests generate one token; decode/TPOT are out of scope.
+  Keep actual cache tiers, query/chunk lengths and routing evidence. Never derive operator batch/shape
+  from client concurrency times prompt length. Uncaptured forward/operator entries remain unbound.
+- Testing-contract thresholds are design defaults, not implemented runtime verdicts. Require complete
+  SSE and all submitted-request accounting; do not report a success-only subset as acceptance.
 
 ## Validation
 

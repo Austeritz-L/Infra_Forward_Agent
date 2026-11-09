@@ -26,5 +26,9 @@ class TestingAgent:
                 "scenario_ids": [row["id"] for row in context.scenarios],
                 "sequence": ["precision_before", "unprofiled_timing", "precision_after"],
                 "service_and_forward_metrics_separate": True,
+                "testing_contract_reference": "testing.contract.json",
+                "focus": context.testing_contract.get("focus"),
+                "scope_alignment": "capture service prefill batches; concurrency is not batch size",
+                "runtime_acceptance_implemented": False,
             },
         )

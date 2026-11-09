@@ -1,6 +1,7 @@
 # 2. 性能统计与分析
 
 入口：agents/performance.py；现有原始 trace 时间分析：analysis.py。
+当前默认 campaign 聚焦 prefill、服务输出1token，不验收 decode/TPOT；测试口径见 testing.md。
 后续细化 prefill/decode forward 的定义、分位数、吞吐计数、按层/算子/shape 分类和计数器。
 
 报告应保留三层：服务 TTFT/TPOT/请求吞吐；完整 forward 延迟/有效 token 吞吐；算子性能。

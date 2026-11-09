@@ -16,8 +16,16 @@ class PerformanceAgent:
                 "optional operator counter reports",
             ],
             expected_outputs=[
-                "service TTFT/TPOT and throughput report",
-                "prefill/decode forward latency and effective-token throughput",
+                (
+                    "service TTFT and input/new-prefill throughput report"
+                    if context.testing_contract.get("focus") == "prefill"
+                    else "service TTFT/TPOT and throughput report"
+                ),
+                (
+                    "prefill forward latency and new-token throughput"
+                    if context.testing_contract.get("focus") == "prefill"
+                    else "prefill/decode forward latency and effective-token throughput"
+                ),
                 "operator duration and work-share report with explicit denominator",
                 "communication/stream overlap hypotheses and missing evidence",
             ],
@@ -26,5 +34,7 @@ class PerformanceAgent:
                 "operator_work_share_denominator": "sum of included GPU event durations",
                 "kernel_work_sum_is_forward_latency": False,
                 "trace_is_optional": True,
+                "focus": context.testing_contract.get("focus"),
+                "decode_metrics_in_scope": context.testing_contract.get("focus") != "prefill",
             },
         )
