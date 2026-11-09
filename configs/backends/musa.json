@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "backend": "musa",
+  "status": "planned",
+  "runtime": "MUSA",
+  "trace_capture": {"torch_profiler_export": "requires_live_verification"},
+  "kernel_counters": {"mcu": "planned"},
+  "communication": ["MCCL", "custom dispatch/combine"],
+  "required_live_checks": ["S5000 model", "driver", "MUSA/MCU versions", "ownership", "topology"],
+  "note": "Historical S5000 work is a source of cases, not backend qualification or a device reservation."
+}

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "backend": "nvidia",
+  "status": "planned",
+  "runtime": "CUDA",
+  "trace_capture": {"torch_profiler": "planned", "nsys": "planned"},
+  "kernel_counters": {"ncu": "planned"},
+  "communication": ["NCCL", "custom kernels"],
+  "required_live_checks": ["architecture", "driver", "tool versions", "ownership", "topology"],
+  "note": "Capability manifest only; no hardware runner is implemented or qualified."
+}

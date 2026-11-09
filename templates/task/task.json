@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "status": "template_not_executable",
+  "objective": "whole-forward latency and effective-token throughput",
+  "identity": {
+    "image_digest": "REQUIRED",
+    "model_and_weights_digest": "REQUIRED",
+    "revision": "REQUIRED",
+    "hardware_and_runtime": "REQUIRED"
+  },
+  "workload_matrix": [],
+  "forward_boundary": "REQUIRED: phase, start/end, synchronization and effective token accounting",
+  "constraints": {
+    "allowed_changes": ["operator", "communication", "declared_topology_axes", "stream_scheduling"],
+    "fixed": ["model semantics", "weight format", "image", "input distribution", "physical resources"]
+  },
+  "correctness": {"reference": "REQUIRED", "tolerances": "REQUIRED", "all_ranks": true},
+  "commands": {"preflight": [], "precision": [], "benchmark": [], "profile": []},
+  "budget": {"max_iterations": 3},
+  "promotion": {"objective": "latency", "min_gain": 0.03, "max_regression": 0.01},
+  "stop_conditions": ["user pause", "ownership changed", "environment drift", "budget exhausted"]
+}
