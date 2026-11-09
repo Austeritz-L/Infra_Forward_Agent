@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "description": "Starter coverage matrix; workload and acceptance details will be refined per domain.",
+  "cases": [
+    {
+      "id": "service-cold",
+      "scope": "service",
+      "phase": "mixed",
+      "axes": {"input_tokens": [1024, 8192], "output_tokens": [128], "concurrency": [1, 16], "cache_state": ["cold"]},
+      "requirements": ["output parity", "TTFT/TPOT", "effective-token throughput", "request failures"]
+    },
+    {
+      "id": "service-warm-prefix",
+      "scope": "service",
+      "phase": "mixed",
+      "axes": {"input_tokens": [8192], "output_tokens": [128], "concurrency": [1, 16], "cache_state": ["warm-prefix"]},
+      "requirements": ["controlled prefix preparation", "record actual cache hit rate", "output parity"]
+    },
+    {
+      "id": "forward-prefill",
+      "scope": "forward",
+      "phase": "prefill",
+      "axes": {"input_tokens": [1024, 8192], "batch_size": [1, 16]},
+      "requirements": ["all-rank synchronization boundary", "unprofiled forward timing", "precision before/after"]
+    },
+    {
+      "id": "forward-decode",
+      "scope": "forward",
+      "phase": "decode",
+      "axes": {"context_tokens": [1024, 8192], "batch_size": [1, 16]},
+      "requirements": ["fixed KV/cache state", "effective token counting", "precision before/after"]
+    },
+    {
+      "id": "operator-routing",
+      "scope": "operator",
+      "phase": "mixed",
+      "axes": {"global_tokens": [128, 4096], "routing": ["balanced", "skewed"]},
+      "requirements": ["explicit operator shape/dtype/layout contract", "microbenchmark separate from forward"]
+    }
+  ]
+}

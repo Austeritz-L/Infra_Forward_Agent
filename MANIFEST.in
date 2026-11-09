@@ -5,4 +5,5 @@ recursive-include playbooks *.md
 recursive-include prompts *.md
 recursive-include templates *.json *.md
 recursive-include integrations *.md
+recursive-include knowledge *.md
 recursive-include tests *.py

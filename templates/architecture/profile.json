@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "new-vendor-new-architecture",
+  "vendor": "TO_BE_SPECIFIED",
+  "family": "TO_BE_SPECIFIED",
+  "runtime": "TO_BE_SPECIFIED",
+  "status": "planned",
+  "capabilities": {"instruction_sets": "requires_live_verification"},
+  "resources": {},
+  "verification_required": ["device identity", "toolchain/ISA", "resource limits", "ownership/topology"]
+}

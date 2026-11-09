@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "mode": "plan",
+  "id": "multi-architecture-baseline",
+  "target": {
+    "model": "TO_BE_SPECIFIED",
+    "image_digest": "TO_BE_SPECIFIED",
+    "weights_digest": "TO_BE_SPECIFIED",
+    "note": "Planning example only; replace identities before live execution."
+  },
+  "architectures": ["moore-s5000", "nvidia-sm90", "nvidia-sm103"],
+  "architecture_profiles": [],
+  "scenario_suite": "../scenarios/baseline.json",
+  "max_scenarios": 100,
+  "deployment": {
+    "objective": "balanced",
+    "allowed_axes": ["tp", "ep", "pp", "dp"],
+    "physical_resource_budget": "TO_BE_SPECIFIED",
+    "capacity_constraints": {},
+    "performance_constraints": {}
+  },
+  "constraints": {
+    "fixed": ["model semantics", "weight format", "global workload", "physical resources"],
+    "allowed_changes": ["operator", "communication fusion", "declared topology axes", "stream scheduling"]
+  },
+  "budget": {"max_iterations": 3},
+  "trace_comparison": {"enabled": true, "pairs": {}},
+  "knowledge_paths": ["../../playbooks", "../../knowledge"]
+}

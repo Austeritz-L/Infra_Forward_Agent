@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "nvidia-sm103",
+  "vendor": "nvidia",
+  "family": "SM103",
+  "runtime": "CUDA",
+  "status": "planned",
+  "capabilities": {
+    "instruction_sets": "requires_live_verification",
+    "matrix_operations": "requires_live_verification",
+    "async_copy_and_barriers": "requires_live_verification",
+    "profiler_and_counters": "requires_live_verification",
+    "collectives_and_streams": "requires_live_verification"
+  },
+  "resources": {},
+  "verification_required": ["exact device SKU", "target/compiler flags", "ISA feature support", "register/shared-memory limits", "driver/runtime/profiler versions", "device ownership and topology"]
+}

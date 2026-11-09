@@ -2,9 +2,11 @@
 
 ## Scope
 
-Build an evidence-driven optimizer for whole-forward latency and throughput. Keep runtime imports
+Build an extensible multi-architecture agent for scenario testing, performance analysis, distributed
+capacity/performance selection, operator optimization and optional trace comparison. Keep runtime imports
 accelerator- and LLM-provider-independent. Read README.md and docs/architecture.md first.
-v0.1 is artifact replay, not an autonomous optimizer. Document capability status honestly.
+Read docs/framework.md for the five domain contracts. v0.2 adds planning to artifact replay;
+neither mode is an autonomous live optimizer. Document capability status honestly.
 
 ## Working rules
 
@@ -17,6 +19,12 @@ v0.1 is artifact replay, not an autonomous optimizer. Document capability status
 - No automatic production replacement. A selected artifact is not a deployed candidate.
 - Never commit credentials, private host inventories, checkpoint data or large profiler binaries.
 - Use the standard library in the control plane unless a dependency materially improves the implementation.
+- Register architectures by explicit identity/capabilities/resources; never infer a verified ISA or
+  resource limit from a vendor name. S5000, SM90 and SM103 have separate profiles.
+- Keep service, forward and operator measurements separate. Cache-capacity selection needs measured
+  per-rank memory; topology alternatives need fixed physical resources and global workload.
+- Read task-relevant playbooks and knowledge cases when operating as a coding agent. The CLI planner
+  only records knowledge references; do not claim automatic retrieval or policy enforcement.
 
 ## Validation
 

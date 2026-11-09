@@ -1,5 +1,9 @@
 # 架构与边界
 
+v0.2 综合框架与五个领域模块见 [framework](framework.md)。`campaign.py` 负责多架构任务规划，
+`engine.py` 保留既有 evidence replay。两者当前独立：规划不会自动调用 replay，也不会执行 GPU 作业。
+服务测试、prefill/decode 统计、容量/性能选型、架构算子优化和可选 trace 对比将在各自模块中展开。
+
 ## 优化单位
 
 一个 campaign 固定模型、权重、镜像、输入分布、forward 边界和验收条件。
@@ -30,7 +34,7 @@ flowchart TD
     Reject --> Analyze
 ```
 
-图中 capture、候选实现与真实验证器属于目标架构；v0.1 读取它们的已生成产物。
+图中 capture、候选实现与真实验证器属于目标架构；当前 replay 读取它们的已生成产物。
 `engine.replay` 是单进程、串行、有限预算的编排器，没有隐藏的后台 daemon 或 LLM 调用。
 流式表示阶段事件随发生写入 JSONL 并刷新 stdout，不表示 token streaming 或实时 profiler。
 
@@ -64,7 +68,7 @@ run_started
 输入损坏、采集缺失、重复 rank trace 或运行时异常会记录 `run_failed` 并停止；
 未通过精度、可比性或性能验收的完整候选记录淘汰后继续。
 若通过性能门禁却无法分析 trace，整个 run 失败，候选不会前进为基线。
-v0.1 不支持崩溃续跑、多个写入者、自动恢复、生产部署或改变拓扑后的自动比较。
+当前不支持崩溃续跑、多个写入者、自动恢复、生产部署或改变拓扑后的自动比较。
 已有输出目录一律拒绝覆盖。停止原因区分预算耗尽与候选耗尽。
 
 ## 时间分析的定义

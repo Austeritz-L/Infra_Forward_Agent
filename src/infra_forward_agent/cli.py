@@ -7,6 +7,8 @@ import tempfile
 from pathlib import Path
 
 from .analysis import analyze
+from .architectures import ArchitectureRegistry
+from .campaign import write_plan
 from .contracts import Evidence, Policy
 from .demo import make_demo
 from .engine import replay
@@ -23,6 +25,12 @@ def main(argv: list[str] | None = None) -> int:
         description="Infra Forward Agent: trace/evidence workflow baseline"
     )
     sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("architectures", help="List architecture targets and unverified capabilities")
+    plan = sub.add_parser(
+        "plan", help="Plan five domains across architectures; launches no GPU jobs"
+    )
+    plan.add_argument("config", type=Path)
+    plan.add_argument("--output", type=Path, required=True)
     demo = sub.add_parser("demo", help="Replay synthetic evidence; requires no GPU or model API")
     demo.add_argument("--output", type=Path, required=True)
     fixtures = sub.add_parser("fixtures", help="Write editable synthetic input evidence")
@@ -42,7 +50,17 @@ def main(argv: list[str] | None = None) -> int:
     comparison.add_argument("--objective", choices=["latency", "throughput"], default="latency")
     args = parser.parse_args(argv)
     try:
-        if args.command == "demo":
+        if args.command == "architectures":
+            emit(
+                {
+                    "architectures": [
+                        profile.to_dict() for profile in ArchitectureRegistry.builtin().all()
+                    ]
+                }
+            )
+        elif args.command == "plan":
+            write_plan(args.config, args.output, emit)
+        elif args.command == "demo":
             with tempfile.TemporaryDirectory(prefix="ifa-demo-") as directory:
                 replay(make_demo(Path(directory)), args.output, emit)
         elif args.command == "fixtures":

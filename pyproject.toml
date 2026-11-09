@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "infra-forward-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "Evidence-driven forward optimization workflow for heterogeneous accelerators"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -18,6 +18,9 @@ ifa = "infra_forward_agent.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"infra_forward_agent.architectures" = ["profiles/*.json"]
 
 [tool.ruff]
 line-length = 100

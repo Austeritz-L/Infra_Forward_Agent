@@ -1,6 +1,10 @@
 # Infra Forward Agent
 
-**从整段 forward 的 trace 出发，用可复现证据驱动算子、通信、分布式与多 Stream 优化。**
+**面向多架构的综合性能 Agent：规范测试、统计分析、分布式选型、算子优化与可选 trace 对比。**
+
+当前目标架构登记为 **Moore S5000、NVIDIA SM90、NVIDIA SM103**，后续通过架构档案扩展。
+五个模块共享场景、环境、证据与验收规则；通信融合、多 Stream overlap 与 KV 容量贯穿其中。
+总体结构与用户控制入口见 [综合框架](docs/framework.md)。
 
 Infra Forward Agent 希望把 Infra 工程师的优化工作组织成一个持续闭环：
 
@@ -16,12 +20,23 @@ Infra Forward Agent 希望把 Infra 工程师的优化工作组织成一个持�
 大规模 trace 的 SQL 分析后端计划参考 [Perfetto](https://perfetto.dev/docs/analysis/getting-started)。
 参考关系、版本与实现边界见 [references](docs/references.md)。
 
-## 当前版本：可执行的工作流基线
+## v0.2：五模块规划框架与可执行回放基线
 
-v0.1 实现了 **artifact replay**：导入已有 trace、精度报告和 benchmark，执行有预算的多轮验收，
+新增 `ifa plan`：展开测试矩阵，为每个架构生成 preflight 和五模块任务，
+记录依赖、所需证据、用户经验引用及预期输出。它只做规划，不执行 GPU 作业或调用模型。
+
+| 模块 | 细化入口 |
+| --- | --- |
+| 规范测试条目、服务多场景覆盖 | [Testing](docs/domains/testing.md) |
+| prefill/decode forward、算子占比与性能 | [Performance](docs/domains/performance.md) |
+| 分布式部署：Cache 容量 / 性能 / 平衡 | [Deployment](docs/domains/deployment.md) |
+| 不同架构的指令、资源与算子优化 | [Kernel](docs/domains/kernel.md) |
+| trace 对比、瓶颈迁移与分析（如有） | [Traces](docs/domains/traces.md) |
+
+保留原有 **artifact replay**：导入已有 trace、精度报告和 benchmark，执行有预算的多轮验收，
 生成下一轮任务，并以 JSONL 流式输出进度。运行时仅依赖 Python 标准库。
 
-| 能力 | v0.1 状态 |
+| 能力 | 当前状态 |
 | --- | --- |
 | Chrome / PyTorch 导出的完整事件 JSON、JSON.gz 导入 | 已实现；需选择单个 forward 窗口 |
 | 按 rank/device 拆解热点、busy/idle、通信与计算时间重叠 | 已实现；启发式调查线索 |
@@ -29,6 +44,8 @@ v0.1 实现了 **artifact replay**：导入已有 trace、精度报告和 benchm
 | 精度前后验收、逐条件 forward 延迟/吞吐比较、噪声门禁 | 已实现；消费外部验证器报告 |
 | 候选谱系、证据快照及 SHA256、候选淘汰、基线前进 | 已实现；仅选择证据，不部署候选 |
 | 流式事件、实验报告、CPU 演示与 CI | 已实现 |
+| 五模块任务规划、有限场景矩阵、多架构档案注册 | 已实现；不执行硬件作业 |
+| 用户经验目录、案例模板与任务引用 | 已实现；自动检索/应用待接入 |
 | 自动抓取 Nsys / NCU / MCU、SSH / 容器执行 | 待实现；已有适配协议 |
 | LLM 规划、代码生成、KDA 执行桥接 | 待实现；已有任务模板与交接契约 |
 | 因果关键路径、完整跨 rank DAG、KV 容量实测 | 待实现 |
@@ -45,10 +62,16 @@ python3 -m venv .venv              # Python >= 3.10
 source .venv/bin/activate
 python -m pip install -e '.[dev]'
 
+ifa architectures
+ifa plan configs/campaigns/multi-architecture.json --output runs/campaign-plan-001
 ifa demo --output runs/demo-001
 python -m unittest discover -s tests -v
 ruff check .
 ```
+
+示例 suite 在每架构展开 18 条场景，三个架构共 54 条，并生成 18 个阶段任务（含 preflight）。
+规划输出包含 campaign.plan.json、scenario.matrix.json、events.jsonl 和 plan.md。
+`execution_ready=false` 与 `needs_adapter` 表示真实 runner 尚未接入；未提供 trace pair 时跳过对比。
 
 演示包含两个 rank、C1/C16 两个条件和三轮候选：算子候选通过后通信成为新热点，
 overlap 候选继续通过，最后一个候选因精度失败被拒绝。所有轮次均保留。
@@ -85,6 +108,10 @@ ifa compare workspaces/replay-inputs/baseline/evidence.json \
 
 ```text
 src/infra_forward_agent/
+  campaign.py               # 多架构总控规划与五模块依赖
+  scenarios.py              # service/forward/operator 场景矩阵
+  agents/                   # testing/performance/deployment/kernel/traces 五个逻辑职责
+  architectures/            # 可扩展注册表 + S5000/SM90/SM103 档案
   contracts.py              # 证据、策略、决策契约
   trace.py                  # Chrome complete-event 归一化
   analysis.py               # 时间并集、热点、调查任务
@@ -93,11 +120,14 @@ src/infra_forward_agent/
   store.py                  # 实验快照与流式事件
   adapters/protocols.py     # Profiler / Optimizer / Executor 扩展接口
   cli.py / demo.py          # 命令行与合成演示
-configs/backends/           # 后端能力声明；不代表已完成接入
+configs/campaigns/          # 架构列表、容量/性能目标、经验与 trace 引用
+configs/scenarios/          # 用户可编辑的场景 suite
+configs/backends/           # 厂商后端集成声明；不代表已完成接入
 docs/                      # 架构、证据、路线图、研究来源
 playbooks/                 # 四个优化方向的调查与验证方法
 prompts/                   # coding agent 的任务起点
 templates/                 # 单项优化实验的工作区模板
+knowledge/                 # 用户实测案例入口；当前仅引用，未自动检索
 integrations/kda/          # 将热点任务交给 KDA 的接口约定
 tests/                     # CPU 上验证分析与验收逻辑
 ```
@@ -114,5 +144,5 @@ tests/                     # CPU 上验证分析与验收逻辑
   分开接入，不能把 CUDA 支持直接当作 MUSA 支持。
 - 历史 S5000 部署和优化工作只提供待导入的方法与案例。旧作业不会因本仓库创建而恢复。
 
-请从 [architecture](docs/architecture.md)、[roadmap](docs/roadmap.md) 和
+请从 [framework](docs/framework.md)、[architecture](docs/architecture.md)、[roadmap](docs/roadmap.md) 和
 [contributing](CONTRIBUTING.md) 继续。新代码采用 [MIT](LICENSE) 许可；未包含第三方实现。

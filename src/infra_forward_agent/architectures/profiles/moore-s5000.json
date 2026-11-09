@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "moore-s5000",
+  "vendor": "moore",
+  "family": "S5000",
+  "runtime": "MUSA",
+  "status": "planned",
+  "capabilities": {
+    "instruction_sets": "requires_live_verification",
+    "matrix_operations": "requires_live_verification",
+    "async_copy_and_barriers": "requires_live_verification",
+    "profiler_and_counters": "requires_live_verification",
+    "collectives_and_streams": "requires_live_verification"
+  },
+  "resources": {},
+  "verification_required": ["device identity", "ISA/compiler support", "memory hierarchy and limits", "driver/runtime/profiler versions", "device ownership and topology"]
+}
