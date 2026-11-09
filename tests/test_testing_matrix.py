@@ -41,11 +41,19 @@ class PrefillMatrixTests(unittest.TestCase):
         )
 
     def test_full_matrix_contains_soak_pressure_optional_tiers_without_decode(self):
-        self.suite["enabled_tiers"] = ["smoke", "core", "extended", "soak", "stress", "optional"]
+        self.suite["enabled_tiers"] = [
+            "smoke",
+            "core",
+            "extended",
+            "soak",
+            "stress",
+            "optional",
+            "long_context",
+        ]
         rows = expand_suite(self.suite)
-        self.assertEqual(len(rows), 384)
+        self.assertEqual(len(rows), 456)
         service = [row for row in rows if row["scope"] == "service"]
-        self.assertEqual(len({row["case"] for row in service}), 15)
+        self.assertEqual(len({row["case"] for row in service}), 16)
         self.assertIn("S07-locust-soak", {row["case"] for row in service})
         self.assertIn("storage-restore", {row["cache_profile"] for row in service})
         self.assertTrue(all(row["phase"] == "prefill" for row in rows))

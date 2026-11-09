@@ -6,6 +6,9 @@ v0.2 综合框架与五个领域模块见 [framework](framework.md)。`campaign.
 v0.4 的独立 `performance/` 可分析规范化native/capture/ceiling证据，不会执行profiler或自动优化。
 它保留累计work、时间并集、exclusive暴露、资源模型和因果结论之间的边界；详见性能领域规范。
 
+v0.5 的独立 `deployment/` 对同物理资源的列举候选做Cache预算与证据选型；不执行部署。
+它是独立跨拓扑契约，旧replay严格环境门禁保持生效。
+
 ## 优化单位
 
 一个 campaign 固定模型、权重、镜像、输入分布、forward 边界和验收条件。
@@ -92,5 +95,5 @@ run_started
 
 先接入一个真实的 forward runner，确立边界与精度验证；再接 profiler；最后接 coding agent。
 KDA 接收某个已定位热点的局部契约；候选必须回到整段 forward 中复验。
-分布式探索需要新版本的比较契约，固定物理资源与业务负载，明确允许变动的拓扑轴；
-当前严格环境匹配会拒绝拓扑不同的证据，避免提前给出不公平的分布式收益。
+分布式探索使用独立v0.5离线契约，固定物理资源和业务负载，按实际rank放置预算。
+原replay严格环境匹配仍拒绝拓扑不同证据；两条路径不自动连接，不替换服务。

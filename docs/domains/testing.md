@@ -41,14 +41,19 @@ K=1024 token。下表数量是单架构 service 条件数；每组还派生对�
 | S12 optional | host恢复 | 16/32K | C1/C16 | device冷、host热 | 4 |
 | S13 optional | storage恢复 | 16/32K | C1/C16 | device/host冷、storage热 | 4 |
 | S14 optional | context/显存边界 | 64/96/128K | C1/C4/C16 | miss/90% | 18 |
+| S15 long_context | 长上下文容量/性能 | 总长度256Ki/512Ki/1Mi/2Mi，prompt减1 | C1/C2/C4 | miss/90% | 24 |
 
 默认 smoke+core：44 workload × 3层 = 132记录/架构；三个架构共396记录。全部tiers：
-128 workload、384记录/架构。smoke只判功能，不具备正式性能资格；S08–S11为characterization，
+152 workload、456记录/架构（包含显式long_context档）。smoke只判功能，不具备正式性能资格；S08–S11为characterization，
 超载拒绝与容量边界单独报告，不冒充正常条件的qualification成功。其余重型tier显式开启。
 
 历史会话按512–8K、8K–32K、32K–128K桶记录实际长度，保留turn/tool结构，不为落桶截断消息。
 超出模型context的条件明确blocked/not_applicable。S05逐长度桶报告尾延迟与完成率，防止总体
 均值掩盖长请求饥饿。资源、context与Cache能力必须在执行前核实。
+
+long_context总长度包含1 token输出预留，prompt为262143/524287/1048575/2097151。
+这是规划目标，须先通过[分布式长度/容量资格](deployment.md)，再执行冷算/命中条件并绑定
+实际prefill与算子；未经捕获不推断shape，不能仅勾选tier就宣称模型支持2Mi。
 
 ## Cache准备与证明
 

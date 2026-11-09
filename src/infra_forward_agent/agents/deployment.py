@@ -16,12 +16,15 @@ class DeploymentAgent:
                 "measured topology candidates",
             ],
             expected_outputs=[
-                "feasible TP/EP/PP/DP candidate table",
+                "per-replica/rank TP/EP/PP/DP/CP candidate table with effective KV sharding",
                 "KV capacity versus measured performance tradeoff",
                 "constraint violations, unmeasured options and Pareto candidates",
+                "exact 1Mi/2Mi context support, quality and admission qualification",
             ],
             options={
                 **context.deployment,
+                "contract": context.deployment_contract,
+                "offline_selector": "ifa deployment <bundle.json> --output <new-directory>",
                 "auto_deploy": False,
                 "capacity_without_memory_evidence": "unknown",
                 "legacy_replay_topology_change": "rejected_as_incomparable",

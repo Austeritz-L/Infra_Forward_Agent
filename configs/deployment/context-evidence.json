@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-11-09",
+  "purpose": "Source observations, not a model whitelist or backend certification. Re-read pinned local configs before any job.",
+  "two_million_decimal_tokens": 2000000,
+  "two_mi_tokens": 2097152,
+  "models": [
+    {
+      "id": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "source": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/raw/main/config.json",
+      "source_field": "text_config.max_position_embeddings",
+      "observed_native_limit_tokens": 1048576,
+      "two_mi_native_support_established": false,
+      "cache_layout": "compressed/shared KV and index pools; inspect actual runtime allocation",
+      "runtime_or_quality_certified": false
+    },
+    {
+      "id": "MiniMax-M3.1-Flash",
+      "source": "https://code.minimax.io/tools/m3.1-flash",
+      "observed_marketing_context": "1M tokens",
+      "observed_native_limit_tokens": null,
+      "two_mi_native_support_established": false,
+      "note": "Product statement does not certify exact local checkpoint config, cache layout, or runtime support.",
+      "runtime_or_quality_certified": false
+    }
+  ],
+  "required_local_evidence": ["checkpoint config and revision/digest", "runtime context limit and rank-local persistent cache layout", "native support or validated extension at exact target", "long-context quality and output parity", "all-rank prefill peak and active admission"],
+  "note": "Mainstream models do not uniformly establish 2M support. A 2M aggregate KV pool is not a 2M single-request limit. Pin/snapshot mutable sources for real comparisons."
+}

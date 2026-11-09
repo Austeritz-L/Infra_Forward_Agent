@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "focus": "prefill",
+  "status": "design_contract_with_separate_offline_selector",
+  "context_targets_including_output_reserve": [262144, 524288, 1048576, 2097152],
+  "output_reserve_tokens": 1,
+  "model_support_registry": "context-evidence.json",
+  "objectives": {
+    "capacity": "maximize validated independent resident full-context slots, subject to all SLOs",
+    "performance": "maximize normalized throughput or latency score, subject to minimum capacity and all SLOs",
+    "balanced": {"method": "Pareto then weighted geometric score", "weights": {"capacity": 0.5, "throughput": 0.3, "latency": 0.2}}
+  },
+  "search_axes": ["tp", "ep", "pp", "dp", "cp"],
+  "placement": "explicit request-serving replicas and physical rank/device map; axes can overlap",
+  "capacity_policy": {
+    "scope": "independent full contexts; worst rank per replica",
+    "unknown_is_zero": false,
+    "dp_pools_single_request_memory": false,
+    "prefix_hit_reduces_active_context": false,
+    "host_storage_adds_active_device_capacity": false,
+    "runtime_pool_tokens_equal_single_request_limit": false,
+    "full_occupancy_service_slo_required": true,
+    "active_residency_without_eviction_or_recompute_required": true,
+    "kv_format_changes": "separate fixed-format cohorts with renewed quality/precision qualification",
+    "required": ["model/native/extended context evidence", "runtime combination support", "unique physical cache pools and actual storage sharding", "all-rank peak and admission through all lifecycle phases", "independent long-context quality and precision before/after native timing"]
+  },
+  "measurement_policy": {
+    "same": ["physical devices and links", "model/weights/image/runtime/tokenizer", "global input dataset and workload", "cache format and cache preparation", "all-rank forward boundary"],
+    "minimum_independent_paired_rounds": 3,
+    "default_max_round_cv": 0.03,
+    "default_latency_stat": "p95",
+    "p95_samples_per_round": 200,
+    "p99_samples_per_round": 1000,
+    "throughput": "global successful new prefill tokens / full cohort including all attempts and drain",
+    "latency": "worst independent-round selected quantile; service TTFT separate from coordinated prefill forward",
+    "communication": "per-phase per-rank transmitted wire bytes and matched group/size/algorithm/link references; never sum overlapping time into service latency"
+  },
+  "small_memory_order": ["remove actual KV replication with supported storage sharding", "reduce duplicated weights using TP/EP/PP budgets", "bound chunk workspace, graphs and overlap buffers", "separately qualify KV quantization", "verify active offload rather than prefix retention", "return infeasible if one complete context does not fit"],
+  "auto_deploy": false,
+  "note": "Planner retains this contract; no hardware execution. Offline bundle schema: docs/domains/deployment.md."
+}

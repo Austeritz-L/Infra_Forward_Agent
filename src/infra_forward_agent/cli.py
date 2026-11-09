@@ -11,6 +11,8 @@ from .architectures import ArchitectureRegistry
 from .campaign import write_plan
 from .contracts import Evidence, Policy
 from .demo import make_demo
+from .deployment.demo import make_deployment_demo
+from .deployment.report import write_deployment_report
 from .engine import replay
 from .evaluation import compare
 from .performance.demo import make_performance_demo
@@ -42,6 +44,15 @@ def main(argv: list[str] | None = None) -> int:
         "performance-demo", help="Synthetic prefill bottleneck investigation; no GPU"
     )
     perf_demo.add_argument("--output", type=Path, required=True)
+    deployment = sub.add_parser(
+        "deployment", help="Budget and rank imported distributed candidates"
+    )
+    deployment.add_argument("bundle", type=Path)
+    deployment.add_argument("--output", type=Path, required=True)
+    dep_demo = sub.add_parser(
+        "deployment-demo", help="Synthetic 2Mi-token topology selection; no GPU"
+    )
+    dep_demo.add_argument("--output", type=Path, required=True)
     demo = sub.add_parser("demo", help="Replay synthetic evidence; requires no GPU or model API")
     demo.add_argument("--output", type=Path, required=True)
     fixtures = sub.add_parser("fixtures", help="Write editable synthetic input evidence")
@@ -76,6 +87,11 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "performance-demo":
             with tempfile.TemporaryDirectory(prefix="ifa-performance-") as directory:
                 write_report(make_performance_demo(Path(directory)), args.output, emit)
+        elif args.command == "deployment":
+            write_deployment_report(args.bundle, args.output, emit)
+        elif args.command == "deployment-demo":
+            with tempfile.TemporaryDirectory(prefix="ifa-deployment-") as directory:
+                write_deployment_report(make_deployment_demo(Path(directory)), args.output, emit)
         elif args.command == "demo":
             with tempfile.TemporaryDirectory(prefix="ifa-demo-") as directory:
                 replay(make_demo(Path(directory)), args.output, emit)

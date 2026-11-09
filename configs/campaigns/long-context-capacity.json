@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "mode": "plan",
+  "id": "long-context-capacity",
+  "target": {
+    "model": "TO_BE_SPECIFIED",
+    "image_digest": "TO_BE_SPECIFIED",
+    "weights_digest": "TO_BE_SPECIFIED",
+    "note": "Planning example only; replace identities before live execution."
+  },
+  "architectures": [
+    "moore-s5000",
+    "nvidia-sm90",
+    "nvidia-sm103"
+  ],
+  "architecture_profiles": [],
+  "scenario_suite": "../scenarios/prefill-service.json",
+  "performance_contract": "../performance/prefill.json",
+  "max_scenarios": 1000,
+  "deployment": {
+    "objective": "capacity",
+    "allowed_axes": [
+      "tp",
+      "ep",
+      "pp",
+      "dp",
+      "cp"
+    ],
+    "physical_resource_budget": "TO_BE_SPECIFIED",
+    "capacity_constraints": {
+      "target_context_tokens": 2097152,
+      "output_reserve_tokens": 1,
+      "min_independent_resident_contexts": 1,
+      "note": "2Mi is a planning target, not a certified model/backend capability"
+    },
+    "performance_constraints": {}
+  },
+  "constraints": {
+    "fixed": [
+      "model semantics",
+      "weight format",
+      "global workload",
+      "physical resources"
+    ],
+    "allowed_changes": [
+      "operator",
+      "communication fusion",
+      "declared topology axes",
+      "stream scheduling"
+    ]
+  },
+  "budget": {
+    "max_iterations": 3
+  },
+  "trace_comparison": {
+    "enabled": true,
+    "pairs": {}
+  },
+  "knowledge_paths": [
+    "../../playbooks",
+    "../../knowledge"
+  ],
+  "deployment_contract": "../deployment/long-context.json",
+  "scenario_tiers": [
+    "long_context"
+  ]
+}

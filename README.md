@@ -20,7 +20,7 @@ Infra Forward Agent 希望把 Infra 工程师的优化工作组织成一个持�
 大规模 trace 的 SQL 分析后端计划参考 [Perfetto](https://perfetto.dev/docs/analysis/getting-started)。
 参考关系、版本与实现边界见 [references](docs/references.md)。
 
-## v0.4：资源上限驱动的 Prefill 性能分析
+## v0.5：长上下文容量与分布式部署选型
 
 新增 `ifa plan`：展开测试矩阵，为每个架构生成 preflight 和五模块任务，
 记录依赖、所需证据、用户经验引用及预期输出。它只做规划，不执行 GPU 作业或调用模型。
@@ -46,9 +46,10 @@ Infra Forward Agent 希望把 Infra 工程师的优化工作组织成一个持�
 | 流式事件、实验报告、CPU 演示与 CI | 已实现 |
 | 五模块任务规划、有限场景矩阵、多架构档案注册 | 已实现；不执行硬件作业 |
 | 用户经验目录、案例模板与任务引用 | 已实现；自动检索/应用待接入 |
-| Prefill 聚焦的测试 suite v2、15 场景族、服务→forward→算子绑定与验收契约 | 规范与规划已实现；真实发压、捕获、统计和 runtime gate 待接入 |
+| Prefill 聚焦的测试 suite v2、16 场景族、服务→forward→算子绑定与验收契约 | 规范与规划已实现；真实发压、捕获、统计和 runtime gate 待接入 |
 | 导入式服务/forward统计、算子work/union/exclusive、通信与多Stream时间线 | 已实现；无自动采集或因果关键路径 |
 | 理论/实测持续/同shape参考上限，资源时间模型与攻坚队列 | 已实现；需输入同环境的已核实上限，未内置任何真实硬件速率 |
+| TP/EP/PP/DP/CP逐rank预算、长上下文容量、三目标/Pareto选型 | 离线导入已实现；需外部质量/峰值/接纳/服务证据，不执行部署 |
 | 自动抓取 Nsys / NCU / MCU、SSH / 容器执行 | 待实现；已有适配协议 |
 | LLM 规划、代码生成、KDA 执行桥接 | 待实现；已有任务模板与交接契约 |
 | 因果关键路径、完整跨 rank DAG、KV 容量实测 | 待实现 |
@@ -68,6 +69,8 @@ python -m pip install -e '.[dev]'
 ifa architectures
 ifa plan configs/campaigns/multi-architecture.json --output runs/campaign-plan-001
 ifa performance-demo --output runs/performance-demo-001
+ifa plan configs/campaigns/long-context-capacity.json --output runs/long-context-plan-001
+ifa deployment-demo --output runs/deployment-demo-001
 ifa demo --output runs/demo-001
 python -m unittest discover -s tests -v
 ruff check .
@@ -76,13 +79,20 @@ ruff check .
 默认 suite 仅研究 prefill，统一输出 1 token，排除 decode/TPOT 验收。
 smoke+core 共 44 组服务工作负载，各自关联 forward/operator，合计 132 条规划记录/架构、
 三个架构共 396 条，生成 18 个阶段任务（含 preflight）。
-规划输出包含 campaign.plan.json、scenario.matrix.json、testing.contract.json、performance.contract.json、events.jsonl 和 plan.md。
+规划输出包含 campaign.plan.json、scenario.matrix.json、testing.contract.json、performance.contract.json、deployment.contract.json、events.jsonl 和 plan.md。
 `execution_ready=false` 与 `needs_adapter` 表示真实 runner 尚未接入；未提供 trace pair 时跳过对比。
 
 完整 [测试矩阵与验收规范](docs/domains/testing.md) 包含冷算、Locust 固定工作量、20 分钟稳态、
 命中控制、长短混合、突发/阶梯/到达率、淘汰抖动与可选分层恢复。用户通过
 `configs/scenarios/prefill-service.json` 的 enabled_tiers、workloads 与 contracts 修改场景、Cache、
-发压协议、指标和初始验收门槛。全部 tiers 共 128 组 workload，384 条记录/架构，不会默认执行。
+发压协议、指标和初始验收门槛。全部 tiers 共 152 组 workload，456 条记录/架构，不会默认执行。
+
+[分布式选型规范](docs/domains/deployment.md)覆盖容量优先、性能优先和平衡目标，先证明单副本能装下
+完整长请求，再比较同物理资源下服务/forward。2Mi（2,097,152 token）是规划目标；原生长度、
+runtime限制、质量和活动KV峰值分别核实，不能由“2M token池”推断单请求支持2M。
+新增可选long_context档：256Ki/512Ki/1Mi/2Mi总长度、C1/C2/C4、冷miss/90%命中，共24组workload。
+`ifa deployment <bundle.json> --output <new-directory>`输出逐rank预算、三目标排名、Pareto和拒绝原因，
+保留来源与SHA256。演示使用虚构2Mi模型，synthetic输入仅展示排名，不推荐真实部署。
 
 [性能分析规范](docs/domains/performance.md) 先问“限制资源、参考上限和可验证空间”，再决定攻坚。
 `ifa performance <bundle.json> --output <new-directory>` 分析规范化导入证据，输出
@@ -130,6 +140,7 @@ src/infra_forward_agent/
   scenarios.py              # service/forward/operator 场景矩阵
   testing/                  # prefill suite v2 校验与同源三层测试规范
   performance/              # 统计、时间线、三层资源上限、证据与攻坚报告
+  deployment/               # 物理Cache池/显存预算、通信参考、三目标离线证据选型
   agents/                   # testing/performance/deployment/kernel/traces 五个逻辑职责
   architectures/            # 可扩展注册表 + S5000/SM90/SM103 档案
   contracts.py              # 证据、策略、决策契约
@@ -143,6 +154,7 @@ src/infra_forward_agent/
 configs/campaigns/          # 架构列表、容量/性能目标、经验与 trace 引用
 configs/scenarios/          # 用户可编辑的场景 suite
 configs/performance/        # 各计算类型的校准、采集与瓶颈定位契约
+configs/deployment/         # 长上下文选型契约、模型长度来源观察
 configs/backends/           # 厂商后端集成声明；不代表已完成接入
 docs/                      # 架构、证据、路线图、研究来源
 playbooks/                 # 四个优化方向的调查与验证方法
@@ -158,7 +170,7 @@ tests/                     # CPU 上验证分析与验收逻辑
 - 主要评价对象是固定 workload 下的**完整 forward 延迟与有效 token 吞吐**。算子 microbenchmark
   用于归因；服务 TTFT/TPOT、端到端请求吞吐单独验收，不能互相替代。
 - 框架版本、模型语义、权重量化和业务流量固定。算子替换、通信融合、TP/EP/PP/DP 放置、
-  KV 容量和 Stream 调度是探索对象。每个实验声明允许变化的轴。
+  CP、KV 容量和 Stream 调度是探索对象。每个实验声明允许变化的轴。
 - 先精度，再不带 profiler 的计时，再精度。保留所有 rank、条件和失败记录。
 - 累计 kernel 时间不等于 forward 墙钟时间；时间重叠不等于依赖正确，也不能证明因果关键路径。
 - 控制面保持硬件中立，后端能力逐项实测。S5000 的 MUSA/MCU 与 NVIDIA 的 CUDA/Nsys/NCU

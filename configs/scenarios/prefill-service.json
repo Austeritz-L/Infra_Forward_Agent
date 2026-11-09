@@ -67,6 +67,7 @@
       "arrival-rate": {"model": "open_loop_arrivals", "reference_rate": "freeze baseline sustainable rate from separate calibration", "queue_bound": "must be configured before execution", "report": "offered/admitted/completed/rejected rates, client dispatch lateness and server queue", "role": "characterization above saturation; distinct from Locust user-based closed loop"},
       "cache-pressure": {"model": "closed_loop_rotating_working_set", "steady_offer_s": 1200, "working_set_basis": "measured reusable KV capacity after static allocations", "report": "per-tier hit/eviction, memory, stalls, retraction and post-pressure recovery"},
       "tier-restore": {"model": "bounded_closed_loop", "rounds": 5, "requests_per_round": 64, "report": "per-tier restore, ready/publication timing, actual new tokens and response parity"},
+      "long-context-boundary": {"model": "bounded_closed_loop", "rounds": 3, "requests_per_round": 200, "capacity_preflight": "small independent full-context admission/quality test before native timing; all ranks peak over full lifecycle", "admission": "actual model/runtime context support, device ownership and per-rank resident budget", "budget": "predeclare time/resource budget; insufficient tail samples remain inconclusive, never silently lower the quantile", "report": "cold/90% counter evidence; all submitted complete SSE; full prompt retained; all prefill chunks and captured operators bound to service condition"},
       "context-boundary": {"model": "bounded_closed_loop", "rounds": 5, "requests_per_round": 64, "admission": "check actual model context and owned memory before each condition", "report": "supported cases qualify normally; unsupported cases explicitly blocked or not_applicable"}
     },
     "metrics": {
@@ -143,6 +144,7 @@
     {"id": "S11-eviction-churn", "tier": "stress", "purpose": "characterization", "load_protocol": "cache-pressure", "axes": {"input_tokens": [8192, 32768], "request_concurrency": [4, 16], "working_set_ratio": [0.5, 1.2, 2], "cache_profile": ["eviction-churn"]}},
     {"id": "S12-host-restore", "tier": "optional", "purpose": "qualification", "load_protocol": "tier-restore", "axes": {"input_tokens": [16384, 32768], "request_concurrency": [1, 16], "cache_profile": ["host-restore"]}},
     {"id": "S13-storage-restore", "tier": "optional", "purpose": "qualification", "load_protocol": "tier-restore", "axes": {"input_tokens": [16384, 32768], "request_concurrency": [1, 16], "cache_profile": ["storage-restore"]}},
-    {"id": "S14-context-boundary", "tier": "optional", "purpose": "qualification", "load_protocol": "context-boundary", "axes": {"input_tokens": [65536, 98304, 131072], "request_concurrency": [1, 4, 16], "cache_profile": ["cold-miss", "partial-90"]}}
+    {"id": "S14-context-boundary", "tier": "optional", "purpose": "qualification", "load_protocol": "context-boundary", "axes": {"input_tokens": [65536, 98304, 131072], "request_concurrency": [1, 4, 16], "cache_profile": ["cold-miss", "partial-90"]}},
+    {"id": "S15-long-context", "tier": "long_context", "purpose": "qualification", "load_protocol": "long-context-boundary", "axes": {"input_tokens": [262143, 524287, 1048575, 2097151], "request_concurrency": [1, 2, 4], "cache_profile": ["cold-miss", "partial-90"]}}
   ]
 }

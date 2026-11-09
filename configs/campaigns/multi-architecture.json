@@ -12,10 +12,11 @@
   "architecture_profiles": [],
   "scenario_suite": "../scenarios/prefill-service.json",
   "performance_contract": "../performance/prefill.json",
+  "deployment_contract": "../deployment/long-context.json",
   "max_scenarios": 1000,
   "deployment": {
     "objective": "balanced",
-    "allowed_axes": ["tp", "ep", "pp", "dp"],
+    "allowed_axes": ["tp", "ep", "pp", "dp", "cp"],
     "physical_resource_budget": "TO_BE_SPECIFIED",
     "capacity_constraints": {},
     "performance_constraints": {}

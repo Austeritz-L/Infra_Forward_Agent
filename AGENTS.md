@@ -6,8 +6,8 @@ Build an extensible multi-architecture agent for scenario testing, performance a
 capacity/performance selection, operator optimization and optional trace comparison. Keep runtime imports
 accelerator- and LLM-provider-independent. Read README.md and docs/architecture.md first.
 Read docs/framework.md, docs/domains/testing.md and docs/domains/performance.md for domain contracts.
-v0.4 adds offline resource-limit/overlap analysis to prefill suite v2, planning and artifact replay;
-neither mode is an autonomous live optimizer. Document capability status honestly.
+v0.5 adds offline distributed selection to resource-limit analysis, planning and artifact replay;
+none is an autonomous live optimizer. Read docs/domains/deployment.md for capacity/topology work. Document capability status honestly.
 
 ## Working rules
 
@@ -34,6 +34,9 @@ neither mode is an autonomous live optimizer. Document capability status honestl
 - Performance targets must state applicable theoretical/sustained/matched-reference limits, source,
   resource quantity, units and counting contract. Keep unknown rates unknown, and empirical references
   distinct from hard physical bounds. A roofline hypothesis is not a confirmed bottleneck.
+- A 2Mi-token target is not native support or aggregate pool capacity. Use unique physical cache pools,
+  verified storage sharding, worst-rank replica budgets and exact-context quality/peak evidence. Never
+  pool DP memory for one request, divide recurrent state by CP, or add retained host prefixes to HBM.
 - Separate native timing from timeline/counter/calibration passes. Do not sum overlapping durations or
   rank-local times, and never call exclusive exposure a causal critical path or saved time.
 - Attack priorities distinguish missing evidence, kernel-efficiency gaps, work/traffic reduction and

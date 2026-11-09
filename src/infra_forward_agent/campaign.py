@@ -56,6 +56,10 @@ def build_plan(config_path: Path) -> dict:
     if not isinstance(suite_path, str):
         raise ValueError("scenario_suite must point to a scenario suite JSON")
     suite = read_json(config_path.parent / suite_path)
+    if "scenario_tiers" in data:
+        if suite.get("schema_version") != 2:
+            raise ValueError("scenario_tiers override requires suite v2")
+        suite["enabled_tiers"] = data["scenario_tiers"]
     scenarios = expand_suite(suite, max_cases=data.get("max_scenarios", 1000))
     testing_contract = {
         "suite_schema_version": suite["schema_version"],
@@ -74,6 +78,11 @@ def build_plan(config_path: Path) -> dict:
             or performance_contract.get("focus") != "prefill"
         ):
             raise ValueError("Performance contract must define schema_version=1, focus=prefill")
+    deployment_contract = {}
+    if data.get("deployment_contract"):
+        deployment_contract = read_json(config_path.parent / data["deployment_contract"])
+        if deployment_contract.get("schema_version") != 1:
+            raise ValueError("Deployment contract must define schema_version=1")
     deployment = data.get("deployment", {})
     if not isinstance(deployment, dict):
         raise ValueError("deployment must be an object")
@@ -110,6 +119,7 @@ def build_plan(config_path: Path) -> dict:
             knowledge,
             testing_contract=testing_contract,
             performance_contract=performance_contract,
+            deployment_contract=deployment_contract,
         )
         stages.append(
             StagePlan(
@@ -147,6 +157,7 @@ def build_plan(config_path: Path) -> dict:
         "knowledge_paths": knowledge,
         "testing_contract": testing_contract,
         "performance_contract": performance_contract,
+        "deployment_contract": deployment_contract,
         "scenario_count_per_architecture": len(scenarios),
         "scenario_count_total": len(scenarios) * len(profiles),
         "scenarios": scenarios,
@@ -156,7 +167,8 @@ def build_plan(config_path: Path) -> dict:
             "Target capabilities and resources require live verification.",
             "Knowledge paths are references, not automatic retrieval or executable policy.",
             "Service, forward and operator evidence have separate measurement boundaries.",
-            "Distributed selection and trace comparison algorithms are not implemented yet.",
+            "Offline distributed selection is a separate command; "
+            "live deployment and trace comparison are not implemented.",
             "Budgets and allowed-change constraints are recorded, not enforced by the planner.",
         ],
     }
@@ -172,6 +184,7 @@ def write_plan(config_path: Path, output: Path, sink=None) -> dict:
         write_json(output / "scenario.matrix.json", plan["scenarios"])
         write_json(output / "testing.contract.json", plan["testing_contract"])
         write_json(output / "performance.contract.json", plan["performance_contract"])
+        write_json(output / "deployment.contract.json", plan["deployment_contract"])
         lines = [
             "# Multi-architecture campaign plan",
             "",

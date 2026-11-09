@@ -12,3 +12,8 @@
 KDA 的 reusable workflow 与 task implementation 分离原则尤其适合跨架构工作：
 控制面保留证据契约，具体 kernel、profiler、量化布局和通信实现留在任务工作区与硬件后端。
 引入上游代码或自动拉取子模块时，需按当时 revision 重新检查许可和运行环境。
+
+v0.5长上下文选型来源与支持边界记录在[部署规范](domains/deployment.md)及
+[模型长度观察](../configs/deployment/context-evidence.json)。参考vLLM版本化CP部署、
+特定后端PCP/DCP布局与SGLang HiCache的分层语义；不复制实现，不将某后端支持泛化到S5000/NV。
+模型长度资料不是本仓库的runtime、质量或显存验收。
