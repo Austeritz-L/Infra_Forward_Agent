@@ -20,7 +20,7 @@ Infra Forward Agent 希望把 Infra 工程师的优化工作组织成一个持�
 大规模 trace 的 SQL 分析后端计划参考 [Perfetto](https://perfetto.dev/docs/analysis/getting-started)。
 参考关系、版本与实现边界见 [references](docs/references.md)。
 
-## v0.3：Prefill 测试规范、五模块规划与可执行回放基线
+## v0.4：资源上限驱动的 Prefill 性能分析
 
 新增 `ifa plan`：展开测试矩阵，为每个架构生成 preflight 和五模块任务，
 记录依赖、所需证据、用户经验引用及预期输出。它只做规划，不执行 GPU 作业或调用模型。
@@ -47,6 +47,8 @@ Infra Forward Agent 希望把 Infra 工程师的优化工作组织成一个持�
 | 五模块任务规划、有限场景矩阵、多架构档案注册 | 已实现；不执行硬件作业 |
 | 用户经验目录、案例模板与任务引用 | 已实现；自动检索/应用待接入 |
 | Prefill 聚焦的测试 suite v2、15 场景族、服务→forward→算子绑定与验收契约 | 规范与规划已实现；真实发压、捕获、统计和 runtime gate 待接入 |
+| 导入式服务/forward统计、算子work/union/exclusive、通信与多Stream时间线 | 已实现；无自动采集或因果关键路径 |
+| 理论/实测持续/同shape参考上限，资源时间模型与攻坚队列 | 已实现；需输入同环境的已核实上限，未内置任何真实硬件速率 |
 | 自动抓取 Nsys / NCU / MCU、SSH / 容器执行 | 待实现；已有适配协议 |
 | LLM 规划、代码生成、KDA 执行桥接 | 待实现；已有任务模板与交接契约 |
 | 因果关键路径、完整跨 rank DAG、KV 容量实测 | 待实现 |
@@ -65,6 +67,7 @@ python -m pip install -e '.[dev]'
 
 ifa architectures
 ifa plan configs/campaigns/multi-architecture.json --output runs/campaign-plan-001
+ifa performance-demo --output runs/performance-demo-001
 ifa demo --output runs/demo-001
 python -m unittest discover -s tests -v
 ruff check .
@@ -73,13 +76,20 @@ ruff check .
 默认 suite 仅研究 prefill，统一输出 1 token，排除 decode/TPOT 验收。
 smoke+core 共 44 组服务工作负载，各自关联 forward/operator，合计 132 条规划记录/架构、
 三个架构共 396 条，生成 18 个阶段任务（含 preflight）。
-规划输出包含 campaign.plan.json、scenario.matrix.json、testing.contract.json、events.jsonl 和 plan.md。
+规划输出包含 campaign.plan.json、scenario.matrix.json、testing.contract.json、performance.contract.json、events.jsonl 和 plan.md。
 `execution_ready=false` 与 `needs_adapter` 表示真实 runner 尚未接入；未提供 trace pair 时跳过对比。
 
 完整 [测试矩阵与验收规范](docs/domains/testing.md) 包含冷算、Locust 固定工作量、20 分钟稳态、
 命中控制、长短混合、突发/阶梯/到达率、淘汰抖动与可选分层恢复。用户通过
 `configs/scenarios/prefill-service.json` 的 enabled_tiers、workloads 与 contracts 修改场景、Cache、
 发压协议、指标和初始验收门槛。全部 tiers 共 128 组 workload，384 条记录/架构，不会默认执行。
+
+[性能分析规范](docs/domains/performance.md) 先问“限制资源、参考上限和可验证空间”，再决定攻坚。
+`ifa performance <bundle.json> --output <new-directory>` 分析规范化导入证据，输出
+performance.analysis.json、attack-plan.json、report.md、流式事件与原始输入/SHA256。
+攻坚队列区分先补测量、算子效率差距、减少工作/流量、等待与overlap，并保留完全重叠热点。
+理论资源界不等于服务可达吞吐，接近经验参考也不等于确认瓶颈；缺少计数器/参考时保留unknown。
+性能演示全部合成，可从其input/performance.json查看schema；没有执行GPU测试或测定S5000/SM90/SM103上限。
 
 演示包含两个 rank、C1/C16 两个条件和三轮候选：算子候选通过后通信成为新热点，
 overlap 候选继续通过，最后一个候选因精度失败被拒绝。所有轮次均保留。
@@ -119,6 +129,7 @@ src/infra_forward_agent/
   campaign.py               # 多架构总控规划与五模块依赖
   scenarios.py              # service/forward/operator 场景矩阵
   testing/                  # prefill suite v2 校验与同源三层测试规范
+  performance/              # 统计、时间线、三层资源上限、证据与攻坚报告
   agents/                   # testing/performance/deployment/kernel/traces 五个逻辑职责
   architectures/            # 可扩展注册表 + S5000/SM90/SM103 档案
   contracts.py              # 证据、策略、决策契约
@@ -131,6 +142,7 @@ src/infra_forward_agent/
   cli.py / demo.py          # 命令行与合成演示
 configs/campaigns/          # 架构列表、容量/性能目标、经验与 trace 引用
 configs/scenarios/          # 用户可编辑的场景 suite
+configs/performance/        # 各计算类型的校准、采集与瓶颈定位契约
 configs/backends/           # 厂商后端集成声明；不代表已完成接入
 docs/                      # 架构、证据、路线图、研究来源
 playbooks/                 # 四个优化方向的调查与验证方法

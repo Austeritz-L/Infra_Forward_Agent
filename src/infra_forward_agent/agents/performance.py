@@ -14,6 +14,8 @@ class PerformanceAgent:
                 "forward phase and synchronization boundary",
                 "optional all-rank traces",
                 "optional operator counter reports",
+                "matched per-resource peaks, sustained probes and same-shape reference baselines",
+                "ISA/dtype/shape/cache/topology counting contracts and raw counter exports",
             ],
             expected_outputs=[
                 (
@@ -28,6 +30,8 @@ class PerformanceAgent:
                 ),
                 "operator duration and work-share report with explicit denominator",
                 "communication/stream overlap hypotheses and missing evidence",
+                "resource-limit and efficiency-gap hypotheses with source/unknowns",
+                "attack plan separating calibration, kernel efficiency and work/traffic reduction",
             ],
             options={
                 "measurement_scopes": ["service", "forward", "operator"],
@@ -36,5 +40,14 @@ class PerformanceAgent:
                 "trace_is_optional": True,
                 "focus": context.testing_contract.get("focus"),
                 "decode_metrics_in_scope": context.testing_contract.get("focus") != "prefill",
+                "performance_contract_reference": "performance.contract.json",
+                "offline_analyzer": "ifa performance",
+                "collector_status": "needs_adapter",
+                "ceiling_levels": [
+                    "architectural_peak",
+                    "sustained_microbenchmark",
+                    "matched_reference",
+                ],
+                "hotspot_is_confirmed_bottleneck": False,
             },
         )

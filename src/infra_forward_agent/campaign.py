@@ -66,6 +66,14 @@ def build_plan(config_path: Path) -> dict:
         "contracts": suite.get("contracts", {}),
         "runtime_acceptance_implemented": False,
     }
+    performance_contract = {}
+    if data.get("performance_contract"):
+        performance_contract = read_json(config_path.parent / data["performance_contract"])
+        if (
+            performance_contract.get("schema_version") != 1
+            or performance_contract.get("focus") != "prefill"
+        ):
+            raise ValueError("Performance contract must define schema_version=1, focus=prefill")
     deployment = data.get("deployment", {})
     if not isinstance(deployment, dict):
         raise ValueError("deployment must be an object")
@@ -101,6 +109,7 @@ def build_plan(config_path: Path) -> dict:
             {"enabled": traces.get("enabled", True), **trace_input},
             knowledge,
             testing_contract=testing_contract,
+            performance_contract=performance_contract,
         )
         stages.append(
             StagePlan(
@@ -137,6 +146,7 @@ def build_plan(config_path: Path) -> dict:
         "budget": data.get("budget", {}),
         "knowledge_paths": knowledge,
         "testing_contract": testing_contract,
+        "performance_contract": performance_contract,
         "scenario_count_per_architecture": len(scenarios),
         "scenario_count_total": len(scenarios) * len(profiles),
         "scenarios": scenarios,
@@ -161,6 +171,7 @@ def write_plan(config_path: Path, output: Path, sink=None) -> dict:
         write_json(output / "campaign.plan.json", plan)
         write_json(output / "scenario.matrix.json", plan["scenarios"])
         write_json(output / "testing.contract.json", plan["testing_contract"])
+        write_json(output / "performance.contract.json", plan["performance_contract"])
         lines = [
             "# Multi-architecture campaign plan",
             "",

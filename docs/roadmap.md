@@ -5,6 +5,7 @@
 | M0：工作流基线（已实现） | CPU replay、分析、证据门禁、日志、任务模板、CI | 合成多轮演示；错误/重叠/rank 隔离测试 |
 | M0.2：综合框架（当前） | S5000/SM90/SM103 注册表、五模块规划、场景矩阵、经验入口 | 可运行 planner、扩展架构测试、明确尚未执行 |
 | M0.3：测试规范（当前） | prefill suite v2、15 场景族、三层同源绑定、Cache/负载/指标/验收契约 | 默认44组workload、132条记录/架构；规范校验与旧版兼容；运行时验收待接 |
+| M0.4：性能分析（当前） | 导入式native统计、work/union/exclusive、通信/Stream、三层资源上限模型与攻坚报告 | 合成/边界测试、来源快照、拒绝错误资源模型；真实采集和因果确认待接 |
 | M1：首个真实 forward | 一个镜像 + runner + 精度器 + trace adapter | 全 rank、C1/C16、固定长度矩阵，前后精度与重复 A/B |
 | M2：自动定位 | CPU/GPU correlation、通信依赖、跨 rank DAG、关键路径候选 | 人工归因对照集；未知依赖显式保留 |
 | M3：算子与通信优化 | KDA/coding-agent bridge、隔离 patch、回归集 | operator 正确、完整 forward 改善、失败候选留档 |

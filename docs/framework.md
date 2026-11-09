@@ -4,6 +4,7 @@
 当前实现了五模块的规划总控，以及既有证据的 replay 验收。真实执行器和领域策略逐项展开。
 `agents` 表示逻辑职责，当前不是五个后台进程，也不会自动调用 LLM 或派发子代理。
 v0.3 的第一领域已细化为 [Prefill 服务测试规范](domains/testing.md)，默认不做 decode 验收。
+v0.4 的第二领域细化为 [上限驱动的性能分析](domains/performance.md)，提供导入式离线报告与攻坚队列。
 
 ## 总控与共享上下文
 
@@ -32,7 +33,7 @@ flowchart TD
 | 用户目标 | 代码模块 | 输入 | 输出契约 | 当前状态 |
 | --- | --- | --- | --- | --- |
 | 规范测试条目、服务多场景 | agents/testing.py + scenarios.py | suite、模型/镜像身份、reference、cache 准备 | 展开后的场景矩阵、覆盖与跳过原因、正确性/原始样本 | 矩阵展开与任务规划已实现；runner 待接入 |
-| prefill forward、算子占比和性能 | agents/performance.py | service/forward/operator 原始样本、可选 trace/counters | 三层分离的统计、明确分母的算子占比、瓶颈假设 | 规划已实现；原 replay 时间分析保留；新聚合器待接入 |
+| prefill forward、算子占比和性能 | agents/performance.py + performance/ | native样本、trace、counter/资源上限引用 | 三层统计、时间口径、资源模型、攻坚与缺证据 | 导入式分析已实现；自动采集/因果归因待接入 |
 | 分布式 Cache 容量或性能 | agents/deployment.py | 固定物理资源、拓扑、全 rank 显存与实测候选 | 可行性、容量/性能取舍表与 Pareto 候选 | 目标/约束接口已实现；选型与容量算法待接入 |
 | 不同架构上的算子优化 | agents/kernel.py | 数学/数值契约、shape/路由、已核实 ISA 和资源 | 隔离 patch、算子证据、forward 复验请求 | 架构上下文与任务规划已实现；优化器待接入 |
 | trace 对比与分析（如有） | agents/traces.py | 同架构、同场景/阶段的 before/after pair | forward/算子/通信/overlap 差异、瓶颈迁移 | pair 校验和可选阶段已实现；对比算法待接入 |
@@ -64,6 +65,7 @@ SM90 和 SM103 共享 CUDA 这个 runtime 身份，不共享未经核实的 kern
 - `deployment.objective`：capacity / performance / balanced。当前仅记录规划目标，不会自动做部署。
 - `playbooks`、`knowledge`：用户方法与实测案例。当前记录引用，尚无检索或自动执行规则。
 - `agents/*.py`、`adapters/protocols.py`：后续逐模块接入策略与运行能力的位置。
+- `configs/performance/prefill.json`：资源上限分层、各计算类型校准、采集pass、统计和攻坚流程。
 
 所有路径相对 campaign JSON 所在目录解析。`max_scenarios` 当前实际限制矩阵展开规模；
 budget、allowed_changes 等其余执行约束仅记录，未来 executor 接入时再强制执行。
@@ -87,6 +89,7 @@ forward exposure 和因果关键路径仍需依赖证据，不能拿多 Stream �
 campaign.plan.json       # 架构快照、五模块任务、依赖、缺证据和实现边界
 scenario.matrix.json     # 规范化场景，不是测试结果
 testing.contract.json    # Cache/发压/指标/验收/输入捕获规范；尚未运行时执行
+performance.contract.json # 上限、计数器、归因口径、采集pass与攻坚规范
 events.jsonl             # planning_started / stage_planned / planning_completed
 plan.md                  # 可审查计划
 ```

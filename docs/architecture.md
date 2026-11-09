@@ -3,6 +3,8 @@
 v0.2 综合框架与五个领域模块见 [framework](framework.md)。`campaign.py` 负责多架构任务规划，
 `engine.py` 保留既有 evidence replay。两者当前独立：规划不会自动调用 replay，也不会执行 GPU 作业。
 服务测试、prefill/decode 统计、容量/性能选型、架构算子优化和可选 trace 对比将在各自模块中展开。
+v0.4 的独立 `performance/` 可分析规范化native/capture/ceiling证据，不会执行profiler或自动优化。
+它保留累计work、时间并集、exclusive暴露、资源模型和因果结论之间的边界；详见性能领域规范。
 
 ## 优化单位
 

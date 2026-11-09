@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "focus": "prefill",
+  "goal": "Identify the limiting resource and service-visible opportunity before selecting an optimization target",
+  "offline_analysis": "implemented for normalized imported evidence",
+  "automatic_collection": "needs_adapter",
+  "resource_model_policy": {"near_reference_fraction": 0.8, "consistency_tolerance": 0.05, "dominant_resource_fraction": 0.9, "max_native_cv": 0.05, "min_native_samples": 5},
+  "ceiling_levels": {
+    "architectural_peak": "conditional physical upper rate with exact SKU/clock/ISA/dtype/counting convention; no hardcoded device rates",
+    "sustained_microbenchmark": "same-device calibrated achievable reference with matching size/cache/access pattern; not a physical upper bound",
+    "matched_reference": "same operator/shape/layout/routing/topology implementation reference; may be exceeded"
+  },
+  "compute_types": {
+    "dense_gemm": {"probe": "precision/ISA-specific GEMM size sweep", "resources": ["tensor", "hbm", "l2", "registers/occupancy", "launch/tail"]},
+    "grouped_gemm": {"probe": "service expert-count/routing/padding-weighted GEMM replay", "resources": ["tensor", "hbm", "l2", "small-group/tile utilization", "synchronization"]},
+    "attention": {"probe": "actual query/cached-context/chunk/head/quantization replay", "resources": ["tensor", "sfu", "hbm", "l2", "shared_memory", "dependency latency"]},
+    "normalization": {"probe": "same-size reduction/vector kernels", "resources": ["vector", "hbm", "sfu", "reduction latency", "launch"]},
+    "elementwise_activation": {"probe": "dtype-specific vector/SFU microbenchmark", "resources": ["vector", "sfu", "hbm", "launch"]},
+    "quantization_pack": {"probe": "same group/scale/layout conversion and packing", "resources": ["vector", "hbm", "integer/bit operations", "scale reduction"]},
+    "gather_scatter": {"probe": "captured index locality, alignment and access-size sweep", "resources": ["hbm", "l2", "transaction amplification", "latency/TLB", "atomics"]},
+    "router_sort": {"probe": "captured top-k/count/prefix/permute/routing replay", "resources": ["vector", "hbm", "atomics", "imbalance", "launch"]},
+    "collective": {"probe": "same group/ranks/payload/dtype/algorithm/interconnect collective sweep", "resources": ["link", "HBM packing", "startup latency", "rank arrival skew", "protocol waits"]},
+    "point_to_point": {"probe": "same peer placement and message-size curve", "resources": ["link", "HBM", "startup latency", "producer/consumer waits"]},
+    "copy": {"probe": "same access-size/direction/cache/stream copy calibration", "resources": ["hbm", "l2", "link", "copy engine"]}
+  },
+  "capture_passes": [
+    {"id": "native", "purpose": "precision before -> complete unprofiled fixed-work service/forward/operator samples -> precision after", "formal_score": true},
+    {"id": "timeline", "purpose": "representative service-linked prefill CPU/GPU/stream/collective capture on all ranks", "formal_score": false},
+    {"id": "counters", "purpose": "targeted same-signature resource counters, raw report plus searchable export and missing-field inventory", "formal_score": false},
+    {"id": "calibration", "purpose": "same owned device and controlled clock/cache/shape/topology reference probes, precision before and after", "formal_score": false},
+    {"id": "validation", "purpose": "one-variable perturbation and paired whole-forward/service A/B to test the bottleneck hypothesis", "formal_score": true}
+  ],
+  "backend_collection": {
+    "nvidia-sm90": {"timeline": "Nsight Systems or PyTorch export", "counters": "Nsight Compute; query exact supported metrics for installed version", "status": "needs_adapter"},
+    "nvidia-sm103": {"timeline": "Nsight Systems or PyTorch export", "counters": "Nsight Compute; independently verify feature and counter support", "status": "needs_adapter"},
+    "moore-s5000": {"timeline": "verified MUSA tracing/export on installed runtime", "counters": "MCU export with exact tool version and copy/counter calibration", "status": "needs_adapter"}
+  },
+  "statistical_keys": ["workload_id", "cache state", "prefill phase", "actual microbatch/chunk", "operator", "shape/layout/quantization", "layer", "rank/device", "stream", "capture/run identity"],
+  "required_counter_semantics": ["exact metric names/units/tool version", "sample/replay scope", "cache/clock controls", "counter traffic versus analytical minimum bytes", "executed/padded versus useful FLOPs", "FMA convention", "wire versus payload versus collective bus bandwidth", "raw unavailable values are unknown, never zero"],
+  "attribution": {"work_share": "sum GPU durations by group / all included GPU duration sum", "wall_coverage": "per-group time union / captured forward window", "exclusive_exposure": "group active with no other GPU group active; not a causal critical path", "overlap": "per-rank/device compute/communication intersection plus distinct-stream activity union", "invocation_count": "requires explicit correlation; GPU event count is not framework invocation count"},
+  "bottleneck_flow": ["validate comparable service cohort and cache", "separate service queue/CPU/transfer from native forward", "inspect all-rank exposed time and slow-rank hypotheses", "bind operator/shape/counters", "calibrate applicable ceilings", "model resource times without summing overlapped components", "separate measurement gaps, kernel-efficiency gaps and work/traffic reduction", "verify dependencies and one-variable causal response", "paired unprofiled service/forward requalification and next trace"],
+  "limitations": ["Resource-model thresholds route investigation; they do not confirm a bottleneck", "Step resource ceilings are conditional optimistic bounds, not attainable service throughput", "Automatic cross-host clock synchronization, dependency DAG, profiler parsing and counter collection are not implemented"]
+}

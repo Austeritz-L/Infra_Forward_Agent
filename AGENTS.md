@@ -5,8 +5,8 @@
 Build an extensible multi-architecture agent for scenario testing, performance analysis, distributed
 capacity/performance selection, operator optimization and optional trace comparison. Keep runtime imports
 accelerator- and LLM-provider-independent. Read README.md and docs/architecture.md first.
-Read docs/framework.md and docs/domains/testing.md for domain contracts. v0.3 adds a prefill-only
-suite v2 with aligned service/forward/operator workloads to campaign planning and artifact replay;
+Read docs/framework.md, docs/domains/testing.md and docs/domains/performance.md for domain contracts.
+v0.4 adds offline resource-limit/overlap analysis to prefill suite v2, planning and artifact replay;
 neither mode is an autonomous live optimizer. Document capability status honestly.
 
 ## Working rules
@@ -31,6 +31,13 @@ neither mode is an autonomous live optimizer. Document capability status honestl
   from client concurrency times prompt length. Uncaptured forward/operator entries remain unbound.
 - Testing-contract thresholds are design defaults, not implemented runtime verdicts. Require complete
   SSE and all submitted-request accounting; do not report a success-only subset as acceptance.
+- Performance targets must state applicable theoretical/sustained/matched-reference limits, source,
+  resource quantity, units and counting contract. Keep unknown rates unknown, and empirical references
+  distinct from hard physical bounds. A roofline hypothesis is not a confirmed bottleneck.
+- Separate native timing from timeline/counter/calibration passes. Do not sum overlapping durations or
+  rank-local times, and never call exclusive exposure a causal critical path or saved time.
+- Attack priorities distinguish missing evidence, kernel-efficiency gaps, work/traffic reduction and
+  dependency/overlap investigation; preserve fully overlapped hotspots for dependency review.
 
 ## Validation
 

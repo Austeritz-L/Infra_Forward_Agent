@@ -13,6 +13,8 @@ from .contracts import Evidence, Policy
 from .demo import make_demo
 from .engine import replay
 from .evaluation import compare
+from .performance.demo import make_performance_demo
+from .performance.report import write_report
 from .trace import load_chrome
 
 
@@ -31,6 +33,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     plan.add_argument("config", type=Path)
     plan.add_argument("--output", type=Path, required=True)
+    performance = sub.add_parser(
+        "performance", help="Analyze imported prefill statistics, resource ceilings and overlap"
+    )
+    performance.add_argument("bundle", type=Path)
+    performance.add_argument("--output", type=Path, required=True)
+    perf_demo = sub.add_parser(
+        "performance-demo", help="Synthetic prefill bottleneck investigation; no GPU"
+    )
+    perf_demo.add_argument("--output", type=Path, required=True)
     demo = sub.add_parser("demo", help="Replay synthetic evidence; requires no GPU or model API")
     demo.add_argument("--output", type=Path, required=True)
     fixtures = sub.add_parser("fixtures", help="Write editable synthetic input evidence")
@@ -60,6 +71,11 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif args.command == "plan":
             write_plan(args.config, args.output, emit)
+        elif args.command == "performance":
+            write_report(args.bundle, args.output, emit)
+        elif args.command == "performance-demo":
+            with tempfile.TemporaryDirectory(prefix="ifa-performance-") as directory:
+                write_report(make_performance_demo(Path(directory)), args.output, emit)
         elif args.command == "demo":
             with tempfile.TemporaryDirectory(prefix="ifa-demo-") as directory:
                 replay(make_demo(Path(directory)), args.output, emit)

@@ -22,6 +22,11 @@ class Slice:
     end_us: float
     kind: str
     classification: str
+    operator: str | None = None
+    compute_type: str = "unknown"
+    signature: str = "unknown"
+    invocation: str | None = None
+    layer: str = "unknown"
 
 
 @dataclass(frozen=True)
@@ -29,6 +34,7 @@ class Trace:
     slices: list[Slice]
     windows: dict[int, tuple[float, float]]
     ignored_events: int
+    clipped_events: int = 0
 
 
 def load_chrome(path: Path, *, rank: int = 0, marker: str = "forward") -> Trace:
@@ -59,7 +65,7 @@ def load_chrome(path: Path, *, rank: int = 0, marker: str = "forward") -> Trace:
         if type(event_rank) is not int or event_rank < 0:
             raise ValueError("rank must be a nonnegative integer")
         start = number(event.get("ts"), "event.ts")
-        end = start + number(event.get("dur"), "event.dur", positive=True)
+        end = number(start + number(event.get("dur"), "event.dur", positive=True), "event.end")
         if name == marker:
             if event_rank in windows:
                 raise ValueError(f"Multiple forward windows for rank {event_rank}; select one step")
@@ -78,6 +84,15 @@ def load_chrome(path: Path, *, rank: int = 0, marker: str = "forward") -> Trace:
         else:
             kind, source = "compute", "category_default"
         device = str(args.get("device", event.get("pid", "unknown")))
+        metadata = [
+            args.get("ifa_operator"),
+            args.get("ifa_compute_type", "unknown"),
+            args.get("ifa_signature", "unknown"),
+            args.get("ifa_invocation"),
+            str(args.get("ifa_layer", "unknown")),
+        ]
+        if any(value is not None and not isinstance(value, str) for value in metadata):
+            raise ValueError("ifa_operator/compute_type/signature/invocation must be strings")
         raw.append(
             Slice(
                 name,
@@ -88,15 +103,18 @@ def load_chrome(path: Path, *, rank: int = 0, marker: str = "forward") -> Trace:
                 end,
                 kind,
                 source,
+                *metadata,
             )
         )
     clipped = []
+    clipping_count = 0
     for item in raw:
         if item.rank not in windows:
             raise ValueError(f"Missing {marker!r} window for rank {item.rank}")
         start, end = windows[item.rank]
         begin, finish = max(start, item.start_us), min(end, item.end_us)
         if finish > begin:
+            clipping_count += begin != item.start_us or finish != item.end_us
             clipped.append(
                 Slice(
                     item.name,
@@ -107,10 +125,15 @@ def load_chrome(path: Path, *, rank: int = 0, marker: str = "forward") -> Trace:
                     finish,
                     item.kind,
                     item.classification,
+                    item.operator,
+                    item.compute_type,
+                    item.signature,
+                    item.invocation,
+                    item.layer,
                 )
             )
         else:
             ignored += 1
     if not clipped:
         raise ValueError("No GPU complete events inside a forward window")
-    return Trace(clipped, windows, ignored)
+    return Trace(clipped, windows, ignored, clipping_count)

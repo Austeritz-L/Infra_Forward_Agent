@@ -24,3 +24,4 @@ jobs:
       - run: ifa demo --output runs/ci-demo
       - run: ifa architectures
       - run: ifa plan configs/campaigns/multi-architecture.json --output runs/ci-plan
+      - run: ifa performance-demo --output runs/ci-performance
