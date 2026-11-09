@@ -138,6 +138,8 @@ Stream ID只在本次rank/device内有意义，baseline Stream 0不自动对应c
 1. 检查所有条件/声明pair的可比性与完整性；任意丢rank、截断、未知分组先补证据。
 2. 每rank按共同语义单元的exclusive exposure寻找主导者，默认要求各窗口主导者一致。
    所有未匹配单元都必须先解决，不能删除它们后宣布迁移。
+   如果暴露打平、差距小于绝对分辨界或全部近0，输出no_distinct_exposure_leader；
+   保留充分重叠的热点继续检查依赖，不按名称制造一个主导者。
 3. 主导单元变化时，同时看新主导者的绝对work、exclusive与share；默认变化界为max(2us,10%)。
 4. 对应分类：
 

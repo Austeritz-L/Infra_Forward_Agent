@@ -268,18 +268,26 @@ def _migration(
     if not available:
         return {"rank": rank, "status": "no_stable_semantic_groups", "confirmed_bottleneck": False}
 
-    def dominant(side: str) -> list[str]:
-        return [
-            max(
-                sorted(available),
-                key=lambda key: (
-                    available[key][i][side]["exclusive_us"] if available[key][i][side] else 0
-                ),
-            )
-            for i in range(len(valid))
-        ]
+    def dominant(side: str) -> list[str | None]:
+        leaders = []
+        for i in range(len(valid)):
+            values = {
+                key: available[key][i][side]["exclusive_us"] if available[key][i][side] else 0
+                for key in available
+            }
+            best = max(values.values())
+            candidates = [key for key, value in values.items() if best - value <= abs_floor]
+            leaders.append(candidates[0] if best > abs_floor and len(candidates) == 1 else None)
+        return leaders
 
     before, after = dominant("baseline"), dominant("candidate")
+    if None in before or None in after:
+        return {
+            "rank": rank,
+            "status": "no_distinct_exposure_leader",
+            "confirmed_bottleneck": False,
+            "next_action": "review tied/fully overlapped hotspots and dependencies; keep all work",
+        }
     old = max(sorted(set(before)), key=before.count)
     new = max(sorted(set(after)), key=after.count)
     if min(before.count(old), after.count(new)) / len(valid) < stable_fraction:
@@ -576,7 +584,9 @@ def build_comparison(path: Path) -> tuple[dict, Sources]:
         )
     next_tasks += [
         {
-            "track": "dependency_overlap_review"
+            "track": "measure_first"
+            if "candidate_dominant" not in m
+            else "dependency_overlap_review"
             if "exposure" in m["status"] or m["status"] == "relative_share_only"
             else "resource_model_review",
             "condition_id": m["condition_id"],
@@ -587,7 +597,6 @@ def build_comparison(path: Path) -> tuple[dict, Sources]:
             "confirmed_bottleneck": False,
         }
         for m in migrations
-        if "candidate_dominant" in m
     ]
     return {
         "schema_version": 1,

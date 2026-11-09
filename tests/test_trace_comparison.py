@@ -119,6 +119,28 @@ class TraceComparisonTests(unittest.TestCase):
         self.assertGreater(migration["new_dominant_work_share"]["percentage_point_change"], 0)
         self.assertIsNone(migration["native_evidence_accepted"])
 
+    def test_fully_overlapped_units_do_not_get_an_arbitrary_dominant_name(self):
+        self.data.pop("native")
+        for pair in self.data["pairs"]:
+            for side in ("baseline", "candidate"):
+                for spec in pair[side]["ranks"]:
+
+                    def overlap(events):
+                        origin = events[0]["ts"]
+                        del events[3:]
+                        for event in events[1:]:
+                            event.update(ts=origin, dur=900)
+
+                    self.edit_trace(spec, overlap)
+        result = self.compare()
+        self.assertEqual(result["status"], "comparable")
+        self.assertEqual(
+            {m["status"] for m in result["bottleneck_migration"]}, {"no_distinct_exposure_leader"}
+        )
+        self.assertTrue(
+            any(t["reason"] == "no_distinct_exposure_leader" for t in result["next_tasks"])
+        )
+
     def test_fusion_uses_one_disjoint_semantic_group_and_mixed_components_are_unknown(self):
         self.data["semantic_mappings"] = [
             {
